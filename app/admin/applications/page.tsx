@@ -12,7 +12,7 @@ export default function AdminApplicationsPage() {
   return (
     <AuthGate allowedRoles={['admin']}>
       <div className="space-y-8">
-        <section className="rounded-[1.25rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+        <section className="page-hero p-6 sm:p-8">
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Applications</h1>
           <p className="mt-3 max-w-2xl text-slate-600">Monitor worker requests and application status across the platform.</p>
         </section>
@@ -21,7 +21,7 @@ export default function AdminApplicationsPage() {
             applications.map((application) => {
               const gig = gigs.find((item) => item.id === application.gig_id);
               return (
-                <article key={application.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-5 shadow-soft">
+                <article key={application.id} className="panel-sm p-5">
                   <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">

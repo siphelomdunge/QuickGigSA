@@ -12,7 +12,7 @@ export default function AdminUsersPage() {
   return (
     <AuthGate allowedRoles={['admin']}>
       <div className="space-y-8">
-        <section className="rounded-[1.25rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+        <section className="page-hero p-6 sm:p-8">
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Users</h1>
           <p className="mt-3 max-w-2xl text-slate-600">Browse registered users, roles, locations, and verification status.</p>
         </section>
@@ -25,7 +25,7 @@ export default function AdminUsersPage() {
               const verification = workerProfile?.verification_status ?? clientProfile?.verification_status;
 
               return (
-                <article key={user.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-5 shadow-soft">
+                <article key={user.id} className="panel-sm p-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-3">
                       <div className="flex flex-wrap items-center gap-2">

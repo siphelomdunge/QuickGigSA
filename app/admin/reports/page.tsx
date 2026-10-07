@@ -13,7 +13,7 @@ export default function AdminReportsPage() {
   return (
     <AuthGate allowedRoles={['admin']}>
       <div className="space-y-8">
-        <section className="rounded-[1.25rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+        <section className="page-hero p-6 sm:p-8">
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Reports</h1>
           <p className="mt-3 max-w-2xl text-slate-600">Review safety reports and track whether they are open, investigating, or resolved.</p>
         </section>
@@ -26,7 +26,7 @@ export default function AdminReportsPage() {
               const gig = gigs.find((item) => item.id === report.gig_id);
 
               return (
-                <article key={report.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-5 shadow-soft">
+                <article key={report.id} className="panel-sm p-5">
                   <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-4">
                       <div className="flex flex-wrap items-center gap-2">

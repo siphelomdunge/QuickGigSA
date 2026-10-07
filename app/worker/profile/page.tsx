@@ -26,11 +26,11 @@ export default function WorkerProfilePage() {
   return (
     <AuthGate allowedRoles={['worker']}>
       <div className="space-y-8">
-        <section className="rounded-[1.25rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+        <section className="page-hero p-6 sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-secondary">Worker profile</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">{profile?.full_name ?? 'Your worker profile'}</h1>
+              <p className="eyebrow">Worker profile</p>
+              <h1 className="mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">{profile?.full_name ?? 'Your worker profile'}</h1>
               <p className="mt-3 max-w-2xl text-slate-600">Keep your skills, experience, and preferred gig categories current.</p>
             </div>
             {profile ? <StatusBadge status={profile.verification_status} /> : null}
@@ -76,7 +76,7 @@ function WorkerProfileForm({ profile, onSave }: { profile: WorkerProfile; onSave
   };
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-[1.25rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+    <form onSubmit={handleSubmit} className="panel p-6 sm:p-8">
       <div className="grid gap-5">
         <Textarea label="Bio" rows={4} value={bio} onChange={(event) => setBio(event.target.value)} />
         <Input label="Skills" value={skills} onChange={(event) => setSkills(event.target.value)} placeholder="Delivery, Events, Customer support" />

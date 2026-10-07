@@ -223,21 +223,34 @@ export default function HomePage() {
             <ShieldCheck className="h-4 w-4" />
             Built for South African youth
           </span>
-          <h1 className="mt-6 text-5xl font-semibold leading-tight text-slate-950 sm:text-6xl lg:text-7xl">
-            Find local gigs. Earn faster. Build your profile.
+          <h1 className="mt-6 text-5xl font-semibold leading-[1.05] text-slate-950 sm:text-6xl lg:text-7xl">
+            Find local gigs. <span className="text-gradient">Earn faster.</span> Build your profile.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
             QuickGig SA connects students, freelancers, and local workers with trusted short-term gigs nearby.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/browse" className="inline-flex min-h-12 items-center justify-center rounded-full bg-primary px-7 py-3 text-base font-semibold text-white shadow-glow-blue transition hover:-translate-y-0.5 hover:bg-blue-600">
+            <Link href="/browse" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-primary-500 to-primary-600 px-7 py-3 text-base font-semibold text-white shadow-glow-blue ring-1 ring-inset ring-white/20 transition hover:-translate-y-0.5 hover:shadow-lift">
               Browse gigs
+              <ArrowRight className="h-4 w-4" />
             </Link>
             <Link href="/client/post-gig" className="inline-flex min-h-12 items-center justify-center rounded-full border border-slate-200 bg-white/85 px-7 py-3 text-base font-semibold text-slate-800 shadow-soft backdrop-blur transition hover:-translate-y-0.5 hover:border-secondary/40">
               Post a gig
             </Link>
           </div>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-10 grid max-w-md grid-cols-3 divide-x divide-slate-200 rounded-2xl border border-slate-200/80 bg-white/70 shadow-soft backdrop-blur">
+            {[
+              { value: '8', label: 'categories' },
+              { value: 'R0', label: 'worker fees' },
+              { value: '<1 min', label: 'to apply' },
+            ].map((stat) => (
+              <div key={stat.label} className="px-4 py-3 text-center">
+                <p className="font-display text-2xl font-semibold tracking-tight text-slate-900">{stat.value}</p>
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 flex flex-wrap gap-3">
             {trustItems.map((item) => (
               <span key={item} className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur">
                 <CheckCircle2 className="h-4 w-4 text-accent" />

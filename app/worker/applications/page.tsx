@@ -16,7 +16,7 @@ export default function WorkerApplicationsPage() {
   return (
     <AuthGate allowedRoles={['worker']}>
       <div className="space-y-8">
-        <section className="rounded-[1.25rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+        <section className="page-hero p-6 sm:p-8">
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">My applications</h1>
           <p className="mt-3 max-w-2xl text-slate-600">Track every gig you have applied for and watch the status change as clients review applications.</p>
         </section>
@@ -26,7 +26,7 @@ export default function WorkerApplicationsPage() {
             workerApplications.map((application) => {
               const gig = gigs.find((item) => item.id === application.gig_id);
               return (
-                <article key={application.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-5 shadow-soft">
+                <article key={application.id} className="panel-sm p-5">
                   <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                     <div className="space-y-3">
                       <div className="flex flex-wrap items-center gap-2">
@@ -61,7 +61,7 @@ export default function WorkerApplicationsPage() {
               title="No applications yet"
               description="Browse local gigs and submit your first application when you find a good match."
               action={
-                <Link href="/browse" className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-600">
+                <Link href="/browse" className="rounded-full bg-gradient-to-b from-primary-500 to-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-glow-blue ring-1 ring-inset ring-white/20 transition hover:shadow-lift">
                   Browse gigs
                 </Link>
               }

@@ -30,11 +30,11 @@ export default function ClientGigApplicationsPage({ params }: ApplicationsPagePr
   return (
     <AuthGate allowedRoles={['client']}>
       <div className="space-y-8">
-        <section className="rounded-[1.25rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+        <section className="page-hero p-6 sm:p-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-secondary">Applications</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">{gig.title}</h1>
+              <p className="eyebrow">Applications</p>
+              <h1 className="mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">{gig.title}</h1>
               <p className="mt-3 max-w-2xl text-slate-600">Review applicants and accept or reject each worker request.</p>
             </div>
             <StatusBadge status={gig.status} />
@@ -49,7 +49,7 @@ export default function ClientGigApplicationsPage({ params }: ApplicationsPagePr
               const skills = profile?.skills ?? [];
 
               return (
-                <article key={application.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-5 shadow-soft">
+                <article key={application.id} className="panel-sm p-5">
                   <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                     <div className="space-y-4">
                       <div className="flex flex-wrap items-center gap-2">

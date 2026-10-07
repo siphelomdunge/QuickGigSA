@@ -102,11 +102,11 @@ export default function PostGigPage() {
   return (
     <AuthGate allowedRoles={['client']}>
       <div className="space-y-8">
-        <section className="rounded-[1.25rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+        <section className="page-hero p-6 sm:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-secondary">Client tools</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">Post a new gig</h1>
+              <p className="eyebrow">Client tools</p>
+              <h1 className="mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">Post a new gig</h1>
               <p className="mt-3 max-w-2xl text-slate-600">Create a clear short-term job post for local independent workers.</p>
             </div>
             <div className="grid grid-cols-3 gap-3 text-center">
@@ -126,7 +126,7 @@ export default function PostGigPage() {
           </div>
         </section>
 
-        <form ref={formRef} onSubmit={handleSubmit} className="rounded-[1.25rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+        <form ref={formRef} onSubmit={handleSubmit} className="panel p-6 sm:p-8">
           <div className="grid gap-5 md:grid-cols-2">
             <Input required name="title" label="Gig title" placeholder="Help at a local event" />
             <Select
