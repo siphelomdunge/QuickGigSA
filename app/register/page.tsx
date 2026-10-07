@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,8 @@ import privacy from '@/content/privacy.json';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { signUp, loading } = useAuth();
+  const { signUp } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -23,6 +24,12 @@ export default function RegisterPage() {
   const [isAdult, setIsAdult] = useState(false);
   const [agreed, setAgreed] = useState(false);
 
+  // Warm the destination route so the post-signup redirect is instant on slow mobile connections.
+  useEffect(() => {
+    router.prefetch('/worker/dashboard');
+    router.prefetch('/client/dashboard');
+  }, [router]);
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage('');
@@ -32,6 +39,7 @@ export default function RegisterPage() {
       return;
     }
 
+    setSubmitting(true);
     try {
       const result = await signUp({
         email, password, full_name: fullName, phone, location, role,
@@ -42,10 +50,12 @@ export default function RegisterPage() {
         return;
       }
 
-      setMessage('Account created. Redirecting...');
+      setMessage('Account created. Taking you to your dashboard…');
       router.replace(role === 'client' ? '/client/dashboard' : '/worker/dashboard');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Could not create your account.');
+      setMessage(error instanceof Error ? error.message : 'Could not create your account. Check your connection and try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -92,8 +102,8 @@ export default function RegisterPage() {
           </label>
         </div>
         <div className="md:col-span-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Button type="submit" size="lg" disabled={loading} className="sm:min-w-44">
-            {loading ? 'Creating account…' : 'Create account'}
+          <Button type="submit" size="lg" loading={submitting} className="sm:min-w-44">
+            {submitting ? 'Creating account…' : 'Create account'}
           </Button>
           <Link href="/login" className="text-sm font-semibold text-slate-600 transition hover:text-slate-900">
             Already have an account? <span className="text-primary">Log in</span>

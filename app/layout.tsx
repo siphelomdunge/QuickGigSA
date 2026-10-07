@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
         <Providers>
           <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
-            <header className="sticky top-3 z-40 mb-8">
+            <header className="sticky top-3 z-40 mb-8 before:pointer-events-none before:absolute before:inset-x-[-1rem] before:-top-3 before:h-[calc(100%+0.75rem)] before:bg-gradient-to-b before:from-background before:via-background/90 before:to-transparent sm:before:inset-x-[-1.5rem]">
               <div className="relative flex items-center justify-between gap-4 rounded-full border border-white/70 bg-white/80 py-2.5 pl-3 pr-3 shadow-card backdrop-blur-xl">
                 <Link href="/" className="group inline-flex items-center gap-2.5 text-lg font-semibold text-slate-950">
                   <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary-500 via-primary-600 to-secondary-500 text-white shadow-glow-blue ring-1 ring-inset ring-white/30 transition group-hover:scale-105">

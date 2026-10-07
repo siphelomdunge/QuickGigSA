@@ -269,7 +269,12 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     }
 
     try {
-      const stored = window.localStorage.getItem(STORE_KEY);
+      let stored: string | null = null;
+      try {
+        stored = window.localStorage.getItem(STORE_KEY);
+      } catch {
+        stored = null;
+      }
       if (stored) {
         const parsed = JSON.parse(stored) as { gigs?: Gig[]; applications?: Application[]; reports?: Report[] };
         setGigs(parsed.gigs?.length ? parsed.gigs : mockGigs);
@@ -283,7 +288,12 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     if (!supabase && !loading) {
-      window.localStorage.setItem(STORE_KEY, JSON.stringify({ gigs, applications, reports }));
+      try {
+        window.localStorage.setItem(STORE_KEY, JSON.stringify({ gigs, applications, reports }));
+      } catch (error) {
+        // Safari private mode / storage full: keep working in memory for this session.
+        console.warn('[store] Could not persist demo data:', error);
+      }
     }
   }, [applications, gigs, loading, reports]);
 
@@ -503,7 +513,11 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     setGigs(initialState.gigs);
     setApplications(initialState.applications);
     setReports(initialState.reports);
-    window.localStorage.removeItem(STORE_KEY);
+    try {
+      window.localStorage.removeItem(STORE_KEY);
+    } catch {
+      /* ignore */
+    }
   }, [loadSupabaseData]);
 
   const value = useMemo(

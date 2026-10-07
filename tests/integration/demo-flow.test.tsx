@@ -104,6 +104,31 @@ describe('demo mode: auth', () => {
   });
 });
 
+describe('demo mode: auth resilience', () => {
+  it('still creates the account when localStorage is unavailable (e.g. Safari private mode)', async () => {
+    const user = userEvent.setup();
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('QuotaExceededError');
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    renderWithProviders(<RegisterPage />);
+    await user.type(screen.getByLabelText('Full name'), 'Private Mode');
+    await user.type(screen.getByLabelText('Email address'), 'private@example.com');
+    await user.type(screen.getByLabelText('Phone number'), '0821234567');
+    await user.type(screen.getByLabelText('Location'), 'Durban');
+    await user.type(screen.getByLabelText('Password'), 'StrongPass123!');
+    for (const box of screen.getAllByRole('checkbox')) await user.click(box);
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/worker/dashboard'));
+    expect(screen.getByRole('button', { name: 'Create account' })).toBeEnabled();
+
+    setItem.mockRestore();
+    warn.mockRestore();
+  });
+});
+
 describe('demo mode: gig lifecycle', () => {
   it('client posts a gig → worker applies → client accepts → worker sees it accepted', async () => {
     const user = userEvent.setup();

@@ -10,7 +10,8 @@ import { useAuth } from '@/lib/auth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn, user, role, loading } = useAuth();
+  const { signIn, user, role } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -26,11 +27,14 @@ export default function LoginPage() {
     event.preventDefault();
     setMessage('');
 
+    setSubmitting(true);
     try {
       await signIn({ email, password });
-      setMessage('Logged in successfully. Redirecting...');
+      setMessage('Logged in. Taking you to your dashboard…');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not log in. Check your email and password.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -40,8 +44,8 @@ export default function LoginPage() {
         <Input label="Email address" type="email" autoComplete="email" placeholder="anele@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
         <Input label="Password" type="password" autoComplete="current-password" placeholder="Enter password" value={password} onChange={(e) => setPassword(e.target.value)} />
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Button type="submit" size="lg" disabled={loading} className="sm:min-w-40">
-            {loading ? 'Signing in…' : 'Login'}
+          <Button type="submit" size="lg" loading={submitting} className="sm:min-w-40">
+            {submitting ? 'Signing in…' : 'Login'}
           </Button>
           <Link href="/forgot-password" className="text-sm font-semibold text-primary hover:text-primary-700">
             Forgot password?
