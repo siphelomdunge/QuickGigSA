@@ -1,20 +1,19 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
+import { useState, useSyncExternalStore, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getAuthRedirectUrl } from '@/lib/auth-redirect';
 import { useAuth } from '@/lib/auth';
 
+const subscribeNoop = () => () => {};
+
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
-  const [resetTarget, setResetTarget] = useState('');
   const { sendPasswordReset, loading } = useAuth();
-
-  useEffect(() => {
-    setResetTarget(getAuthRedirectUrl('/reset-password'));
-  }, []);
+  // The redirect URL depends on window.location, so it is empty on the server and filled in on the client.
+  const resetTarget = useSyncExternalStore(subscribeNoop, () => getAuthRedirectUrl('/reset-password'), () => '');
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

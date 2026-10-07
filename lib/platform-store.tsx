@@ -256,6 +256,8 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     if (supabase) {
+      // Initial load from Supabase / localStorage (external stores), then subscribe to auth changes.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadSupabaseData().catch(() => setLoading(false));
       const { data } = supabase.auth.onAuthStateChange(() => {
         loadSupabaseData().catch(() => setLoading(false));

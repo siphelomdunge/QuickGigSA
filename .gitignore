@@ -6,3 +6,8 @@ out
 .env*
 !.env.example
 .DS_Store
+
+# test output
+/test-results
+/playwright-report
+/coverage

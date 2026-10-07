@@ -1,0 +1,218 @@
+/**
+ * Integration tests for the demo-mode (no Supabase) flows.
+ *
+ * These render the real AuthProvider + PlatformStoreProvider and real pages in jsdom,
+ * with only next/navigation mocked. State persists in localStorage between renders,
+ * exactly as it does in the browser, so one test can play several roles in sequence.
+ */
+import { act, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Suspense, type ReactNode } from 'react';
+
+const router = { push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn(), refresh: vi.fn() };
+vi.mock('next/navigation', () => ({
+  useRouter: () => router,
+  usePathname: () => '/',
+  useSearchParams: () => new URLSearchParams(),
+  redirect: vi.fn(),
+}));
+
+import { Providers } from '@/app/providers';
+import LoginPage from '@/app/login/page';
+import RegisterPage from '@/app/register/page';
+import PostGigPage from '@/app/client/post-gig/page';
+import GigPage from '@/app/gigs/[id]/page';
+import ClientGigApplicationsPage from '@/app/client/gigs/[id]/applications/page';
+import WorkerApplicationsPage from '@/app/worker/applications/page';
+import WorkerProfilePage from '@/app/worker/profile/page';
+import { useAuth } from '@/lib/auth';
+import { usePlatformStore } from '@/lib/platform-store';
+
+const DEMO_AUTH_KEY = 'quickgig-sa-demo-auth';
+const STORE_KEY = 'quickgig-sa-demo-store-v2';
+
+function renderWithProviders(ui: ReactNode) {
+  return render(
+    <Providers>
+      <Suspense fallback={null}>{ui}</Suspense>
+    </Providers>,
+  );
+}
+
+/** Next.js hands client pages an already-settled params promise; React's `use()` can read it synchronously. */
+function params(id: string): Promise<{ id: string }> {
+  const promise = Promise.resolve({ id }) as Promise<{ id: string }> & { status?: string; value?: { id: string } };
+  promise.status = 'fulfilled';
+  promise.value = { id };
+  return promise;
+}
+
+/** Signs in through the real login page in demo mode (any password works). */
+async function loginAs(email: string) {
+  const user = userEvent.setup();
+  const view = renderWithProviders(<LoginPage />);
+  await user.type(screen.getByLabelText('Email address'), email);
+  await user.type(screen.getByLabelText('Password'), 'password');
+  await user.click(screen.getByRole('button', { name: 'Login' }));
+  await waitFor(() => expect(JSON.parse(window.localStorage.getItem(DEMO_AUTH_KEY) ?? 'null')?.email).toBe(email));
+  view.unmount();
+}
+
+/** Small probe component so tests can read store state without going through a page. */
+function StoreProbe({ onReady }: { onReady: (s: ReturnType<typeof usePlatformStore>, a: ReturnType<typeof useAuth>) => void }) {
+  const store = usePlatformStore();
+  const auth = useAuth();
+  if (!store.loading && !auth.loading) onReady(store, auth);
+  return null;
+}
+
+beforeEach(() => {
+  window.localStorage.clear();
+  router.push.mockClear();
+  router.replace.mockClear();
+});
+
+describe('demo mode: auth', () => {
+  it('logs a seeded user in with their seeded role and redirects to the right dashboard', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<LoginPage />);
+    await user.type(screen.getByLabelText('Email address'), 'nandi@example.com');
+    await user.type(screen.getByLabelText('Password'), 'whatever');
+    await user.click(screen.getByRole('button', { name: 'Login' }));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/client/dashboard'));
+  });
+
+  it('registers a new worker only once both consent boxes are ticked', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<RegisterPage />);
+    await user.type(screen.getByLabelText('Full name'), 'Test Worker');
+    await user.type(screen.getByLabelText('Email address'), 'new.worker@example.com');
+    await user.type(screen.getByLabelText('Phone number'), '0821234567');
+    await user.type(screen.getByLabelText('Location'), 'Cape Town');
+    await user.type(screen.getByLabelText('Password'), 'StrongPass123!');
+
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes).toHaveLength(2);
+    for (const box of checkboxes) await user.click(box);
+
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+    await waitFor(() => {
+      const stored = JSON.parse(window.localStorage.getItem(DEMO_AUTH_KEY) ?? 'null');
+      expect(stored?.email).toBe('new.worker@example.com');
+    });
+  });
+});
+
+describe('demo mode: gig lifecycle', () => {
+  it('client posts a gig → worker applies → client accepts → worker sees it accepted', async () => {
+    const user = userEvent.setup();
+
+    // 1. Client posts a gig.
+    await loginAs('nandi@example.com');
+    let view = renderWithProviders(<PostGigPage />);
+    await screen.findByRole('heading', { name: 'Post a new gig' });
+    await user.type(screen.getByLabelText('Gig title'), 'Integration test gig');
+    await user.type(screen.getByLabelText('Public location area'), 'Observatory, Cape Town');
+    await user.type(screen.getByLabelText('Private address'), '12 Secret Lane');
+    await user.type(screen.getByLabelText('Date'), '2026-12-01');
+    await user.type(screen.getByLabelText('Start time'), '09:00');
+    await user.type(screen.getByLabelText('End time'), '13:00');
+    await user.type(screen.getByLabelText('Pay amount (ZAR)'), '350');
+    await user.type(screen.getByLabelText('Description'), 'Help pack boxes for a market stall.');
+    await user.type(screen.getByLabelText('Requirements'), 'Comfortable shoes.');
+    await user.click(screen.getByRole('button', { name: 'Post gig' }));
+
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith(expect.stringMatching(/^\/client\/gigs\/.+\/applications$/)));
+    const gigId = (router.push.mock.calls.at(-1)![0] as string).split('/')[3]!;
+    const persisted = JSON.parse(window.localStorage.getItem(STORE_KEY)!);
+    expect(persisted.gigs.find((g: { id: string }) => g.id === gigId)).toMatchObject({ title: 'Integration test gig', status: 'open', pay_amount: 350 });
+    view.unmount();
+
+    // 2. Worker applies.
+    await loginAs('anele@example.com');
+    view = renderWithProviders(<GigPage params={params(gigId)} />);
+    await screen.findByRole('heading', { name: 'Integration test gig' });
+    await user.click(screen.getByRole('button', { name: 'Apply for this Gig' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Why are you a good fit for this gig?'), 'I live nearby and have event experience.');
+    await user.click(within(dialog).getByRole('button', { name: 'Submit Application' }));
+    await screen.findByText('Application submitted successfully.');
+    view.unmount();
+
+    // 3. Client accepts.
+    await loginAs('nandi@example.com');
+    view = renderWithProviders(<ClientGigApplicationsPage params={params(gigId)} />);
+    await screen.findByRole('heading', { name: 'Integration test gig' });
+    expect(await screen.findByText('Anele Mpofu')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /accept/i }));
+    await waitFor(() => {
+      const apps = JSON.parse(window.localStorage.getItem(STORE_KEY)!).applications as { gig_id: string; status: string }[];
+      expect(apps.find((a) => a.gig_id === gigId)?.status).toBe('accepted');
+    });
+    view.unmount();
+
+    // 4. Worker sees the accepted status.
+    await loginAs('anele@example.com');
+    renderWithProviders(<WorkerApplicationsPage />);
+    const card = (await screen.findByText('Integration test gig')).closest('article')!;
+    expect(within(card).getByText(/accepted/i)).toBeInTheDocument();
+  });
+
+  it('a worker cannot apply twice to the same gig', async () => {
+    const user = userEvent.setup();
+    await loginAs('anele@example.com');
+    renderWithProviders(<GigPage params={params('gig_1')} />);
+    await screen.findByRole('heading', { name: 'Event assistant for food stall' });
+    await user.click(screen.getByRole('button', { name: 'Apply for this Gig' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Why are you a good fit for this gig?'), 'First application.');
+    await user.click(within(dialog).getByRole('button', { name: 'Submit Application' }));
+    await screen.findByText('Application submitted successfully.');
+
+    // The apply button is replaced by the application status, so a second application is impossible.
+    expect(await screen.findByText('You applied to this gig')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Apply for this Gig' })).not.toBeInTheDocument();
+    const apps = JSON.parse(window.localStorage.getItem(STORE_KEY)!).applications as { gig_id: string; worker_id: string }[];
+    expect(apps.filter((a) => a.gig_id === 'gig_1' && a.worker_id === 'user_1')).toHaveLength(1);
+  });
+
+  it('a client is told to use a worker account instead of being shown the apply dialog', async () => {
+    const user = userEvent.setup();
+    await loginAs('nandi@example.com');
+    renderWithProviders(<GigPage params={params('gig_1')} />);
+    await screen.findByRole('heading', { name: 'Event assistant for food stall' });
+    await user.click(screen.getByRole('button', { name: 'Apply for this Gig' }));
+    expect(await screen.findByText('Please use a worker account to apply for gigs.')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+});
+
+describe('demo mode: profile form', () => {
+  it('keeps what the user is typing when the store re-renders (regression)', async () => {
+    const user = userEvent.setup();
+    await loginAs('anele@example.com');
+
+    let store: ReturnType<typeof usePlatformStore> | undefined;
+    renderWithProviders(
+      <>
+        <StoreProbe onReady={(s) => (store = s)} />
+        <WorkerProfilePage />
+      </>,
+    );
+    const bio = await screen.findByLabelText('Bio');
+    await user.clear(bio);
+    await user.type(bio, 'Half-typed bio');
+
+    // Something unrelated changes in the store, which replaces the workerProfiles array identity.
+    await act(async () => {
+      await store!.updateGigStatus('gig_2', 'closed');
+    });
+
+    expect(screen.getByLabelText('Bio')).toHaveValue('Half-typed bio');
+
+    await user.click(screen.getByRole('button', { name: 'Save profile' }));
+    expect(await screen.findByText('Profile updated.')).toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem(STORE_KEY) ?? '{}')).toBeTruthy();
+  });
+});

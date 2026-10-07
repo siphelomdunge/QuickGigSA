@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState, type FormEvent } from 'react';
+import { use, useMemo, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, CalendarDays, Clock3, MapPin, ShieldCheck, UserRound, Users, Wallet } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
@@ -14,10 +14,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Toast } from '@/components/ui/toast';
 
 interface GigPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default function GigPage({ params }: GigPageProps) {
+  const { id } = use(params);
   const router = useRouter();
   const { gigs, applications, applyToGig, createReport } = usePlatformStore();
   const { user, role } = useAuth();
@@ -28,12 +29,12 @@ export default function GigPage({ params }: GigPageProps) {
   const [reportDescription, setReportDescription] = useState('');
   const [notice, setNotice] = useState('');
   const [toast, setToast] = useState('');
-  const gig = gigs.find((item) => item.id === params.id);
+  const gig = gigs.find((item) => item.id === id);
 
   const existingApplication = useMemo(() => {
     if (!user) return undefined;
-    return applications.find((application) => application.gig_id === params.id && application.worker_id === user.id);
-  }, [applications, params.id, user]);
+    return applications.find((application) => application.gig_id === id && application.worker_id === user.id);
+  }, [applications, id, user]);
 
   if (!gig) {
     return (

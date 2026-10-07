@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation';
 
 interface ApplicantsRedirectPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export default function ApplicantsRedirectPage({ params }: ApplicantsRedirectPageProps) {
-  redirect(`/client/gigs/${params.id}/applications`);
+export default async function ApplicantsRedirectPage({ params }: ApplicantsRedirectPageProps) {
+  const { id } = await params;
+  redirect(`/client/gigs/${id}/applications`);
 }

@@ -142,9 +142,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!supabase) {
+      // Demo mode: hydrate the session from localStorage (an external store) once on mount.
       const storedUser = window.localStorage.getItem(DEMO_AUTH_KEY);
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser) as AuthUser;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setUser(parsedUser);
         setRole(getUserRole(parsedUser));
       }

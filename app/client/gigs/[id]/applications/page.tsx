@@ -1,5 +1,6 @@
 'use client';
 
+import { use } from 'react';
 import Link from 'next/link';
 import { Check, CheckCircle2, MapPin, Star, X } from 'lucide-react';
 import { AuthGate } from '@/components/auth-gate';
@@ -9,13 +10,14 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { usePlatformStore } from '@/lib/platform-store';
 
 interface ApplicationsPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default function ClientGigApplicationsPage({ params }: ApplicationsPageProps) {
+  const { id } = use(params);
   const { gigs, applications, users, workerProfiles, updateApplicationStatus } = usePlatformStore();
-  const gig = gigs.find((item) => item.id === params.id);
-  const gigApplications = applications.filter((application) => application.gig_id === params.id);
+  const gig = gigs.find((item) => item.id === id);
+  const gigApplications = applications.filter((application) => application.gig_id === id);
 
   if (!gig) {
     return (

@@ -1,6 +1,6 @@
 # QuickGig SA
 
-A youth gig marketplace for South Africa. Clients post short-term gigs, workers apply, and admins oversee the platform. This is an MVP: the core flows work, but it has no automated UI tests yet and is not hardened for production.
+A youth gig marketplace for South Africa. Clients post short-term gigs, workers apply, and admins oversee the platform. This is an MVP: the core flows work and are covered by automated tests, but it is not yet hardened for production.
 
 **Stack:** Next.js 16 (App Router, React 19), TypeScript, Tailwind CSS, Supabase (auth, Postgres, row-level security), lucide-react.
 
@@ -37,7 +37,7 @@ On **Post a gig**, the "Improve description and requirements" button rewrites a 
 - **Privacy:** only the public fields are sent. The private address is never accepted by the API.
 - **Access:** when Supabase is configured, the route requires a signed-in user (the page sends the session token) and caps each user at 10 requests a minute and 50 a day. Without Supabase (local demo mode) it falls back to a per-IP limit.
 - **Guardrails in code, not just in the prompt:** every result, from either path, passes through `sanitize()` in `lib/gig-assist.ts`. It drops sentences that contain contact details, limit applicants by gender, race or nationality, ask workers to pay a fee, or state a Rand amount that differs from the Pay field. Removed items are shown to the client as notes.
-- **Abuse limits:** input lengths are clamped and the route has a simple per-IP rate limit (in memory, so use a shared store in production).
+- **Abuse limits:** input lengths are clamped and the route is rate limited (10/min, 50/day per user, or per IP in demo mode). Limits are kept in memory by default; set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` to share them across instances and deploys (plain REST, no SDK). The per-IP path only trusts `x-forwarded-for` when `TRUST_PROXY=true`, and then uses the last hop, since the first one is client-controlled.
 
 ### Evaluating it
 
@@ -47,6 +47,21 @@ npm run eval -- --fallback-only   # rule-based path only, no key needed
 ```
 
 `eval/gig-assist-cases.json` holds 18 rough drafts, including ones with phone numbers, emails, ID numbers, discriminatory wording, worker fees, a prompt-injection attempt, all-caps text and mixed isiXhosa/English. For each result the script checks: usable length, no contact details, no private address, no invented pay, no restricted-attribute wording, no worker fees, and that key task details from the draft survive. These are rule-based checks. They catch rule violations, not weak writing, so read live outputs as well.
+
+## Tests
+
+```bash
+npm test              # unit + integration (Vitest + jsdom), no browser or Supabase needed
+npm run test:e2e      # end-to-end (Playwright), demo mode; first run: npx playwright install chromium
+npm run eval -- --fallback-only   # AI assistant guardrail checks
+```
+
+- `tests/unit/`: the `sanitize()` guardrails, draft parsing, and the rate limiter (both backends).
+- `tests/integration/`: renders the real providers and pages in jsdom and plays the full demo flow: client posts a gig, worker applies, client accepts, worker sees the status. Also covers login, registration consent, and role rules.
+- `tests/e2e/`: the same flows plus role gates in a real browser, on desktop and mobile viewports.
+- `supabase/tests/`: row-level security attacks against a throwaway Postgres (see below).
+
+All of these run in GitHub Actions on every push and pull request (`.github/workflows/ci.yml`).
 
 ## Security
 
