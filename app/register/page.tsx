@@ -7,6 +7,8 @@ import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import terms from '@/content/terms.json';
+import privacy from '@/content/privacy.json';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -18,13 +20,23 @@ export default function RegisterPage() {
   const [role, setRole] = useState('worker');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [isAdult, setIsAdult] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage('');
 
+    if (!isAdult || !agreed) {
+      setMessage('Please confirm you are 18 or older and accept the Terms and Privacy Policy.');
+      return;
+    }
+
     try {
-      const result = await signUp({ email, password, full_name: fullName, phone, location, role });
+      const result = await signUp({
+        email, password, full_name: fullName, phone, location, role,
+        consent: { terms_version: `${terms.version}; ${privacy.version}` },
+      });
       if (result.needsEmailConfirmation) {
         setMessage('Check your email for a verification link. Then return to login.');
         return;
@@ -49,6 +61,19 @@ export default function RegisterPage() {
           <Input label="Location" placeholder="Cape Town" value={location} onChange={(event) => setLocation(event.target.value)} />
           <Select label="Choose role" value={role} onChange={(event) => setRole(event.target.value)} options={[{ label: 'Worker', value: 'worker' }, { label: 'Client', value: 'client' }]} />
           <Input label="Password" type="password" placeholder="Create a strong password" value={password} onChange={(event) => setPassword(event.target.value)} />
+          <div className="md:col-span-2 space-y-3 text-sm text-slate-700">
+            <label className="flex items-start gap-3">
+              <input type="checkbox" required checked={isAdult} onChange={(event) => setIsAdult(event.target.checked)} className="mt-1 h-4 w-4" />
+              <span>I am 18 years or older.</span>
+            </label>
+            <label className="flex items-start gap-3">
+              <input type="checkbox" required checked={agreed} onChange={(event) => setAgreed(event.target.checked)} className="mt-1 h-4 w-4" />
+              <span>
+                I have read and accept the <Link href="/terms" target="_blank" className="font-semibold text-primary underline">Terms of Use</Link> and
+                the <Link href="/privacy" target="_blank" className="font-semibold text-primary underline">Privacy Policy</Link>, and I consent to QuickGig SA using my information as described there.
+              </span>
+            </label>
+          </div>
           <div className="md:col-span-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <Button type="submit" disabled={loading}>
               {loading ? 'Creating account…' : 'Create account'}

@@ -14,6 +14,8 @@ export interface Database {
           profile_photo_url: string | null;
           created_at: string;
           updated_at: string;
+          accepted_terms_at: string | null;
+          terms_version: string | null;
         };
         Insert: {
           id: string;
@@ -25,6 +27,8 @@ export interface Database {
           profile_photo_url?: string | null;
           created_at?: string;
           updated_at?: string;
+          accepted_terms_at?: string | null;
+          terms_version?: string | null;
         };
         Update: Partial<Database['public']['Tables']['users']['Insert']>;
       };
@@ -90,7 +94,6 @@ export interface Database {
           description: string;
           category: string;
           location_area: string;
-          address_private: string | null;
           date: string;
           start_time: string;
           end_time: string;
@@ -108,7 +111,6 @@ export interface Database {
           description: string;
           category: string;
           location_area: string;
-          address_private?: string | null;
           date: string;
           start_time: string;
           end_time: string;
@@ -120,6 +122,21 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database['public']['Tables']['gigs']['Insert']>;
+      };
+      gig_private_details: {
+        Row: {
+          gig_id: string;
+          address: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          gig_id: string;
+          address?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['gig_private_details']['Insert']>;
       };
       applications: {
         Row: {

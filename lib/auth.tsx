@@ -25,7 +25,7 @@ interface AuthContextValue {
   loading: boolean;
   error: string | null;
   signIn: (credentials: { email: string; password: string }) => Promise<void>;
-  signUp: (data: { email: string; password: string; full_name: string; phone: string; location: string; role: string }) => Promise<{ needsEmailConfirmation: boolean }>;
+  signUp: (data: { email: string; password: string; full_name: string; phone: string; location: string; role: string; consent?: { terms_version: string } }) => Promise<{ needsEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
@@ -212,7 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, [resolveRole]);
 
-  const signUp = useCallback(async ({ email, password, full_name, phone, location, role }: { email: string; password: string; full_name: string; phone: string; location: string; role: string }) => {
+  const signUp = useCallback(async ({ email, password, full_name, phone, location, role, consent }: { email: string; password: string; full_name: string; phone: string; location: string; role: string; consent?: { terms_version: string } }) => {
     if (!supabase) {
       setLoading(true);
       setError(null);
@@ -236,6 +236,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           phone,
           location,
           role,
+          // The database records the time itself (see the consent_record migration).
+          ...(consent ? { accepted_terms: true, terms_version: consent.terms_version } : {}),
         },
       },
     });

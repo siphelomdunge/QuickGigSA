@@ -41,6 +41,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 <p className="leading-6">
                   QuickGig SA does not guarantee jobs or payment. Use the platform to connect, review applicants, and manage gig progress locally.
                 </p>
+                <p className="flex gap-4 pt-1 font-medium">
+                  <Link href="/terms" className="underline">Terms of Use</Link>
+                  <Link href="/privacy" className="underline">Privacy Policy</Link>
+                </p>
               </div>
             </footer>
           </div>

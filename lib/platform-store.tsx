@@ -131,7 +131,7 @@ function mapClientProfile(row: ClientProfileRow): ClientProfile {
   };
 }
 
-function mapGig(row: GigRow, usersById: Map<string, User>, clientsByUserId: Map<string, ClientProfile>): Gig {
+function mapGig(row: GigRow, usersById: Map<string, User>, clientsByUserId: Map<string, ClientProfile>, address = ''): Gig {
   return {
     id: row.id,
     client_id: row.client_id,
@@ -140,7 +140,8 @@ function mapGig(row: GigRow, usersById: Map<string, User>, clientsByUserId: Map<
     description: row.description,
     category: row.category,
     location_area: row.location_area,
-    address_private: row.address_private ?? '',
+    // Only filled in for the gig owner and accepted workers: the database enforces this.
+    address_private: address,
     date: row.date,
     start_time: row.start_time,
     end_time: row.end_time,
@@ -205,7 +206,7 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     if (!supabase) return;
 
     setLoading(true);
-    const [publicProfilesResult, ownUsersResult, workerProfilesResult, clientProfilesResult, gigsResult, applicationsResult, reportsResult] = await Promise.all([
+    const [publicProfilesResult, ownUsersResult, workerProfilesResult, clientProfilesResult, gigsResult, applicationsResult, reportsResult, addressesResult] = await Promise.all([
       // Safe for everyone: names/locations only, no email or phone (see public_profiles view).
       supabase.from('public_profiles').select('*').order('created_at', { ascending: false }).limit(1000),
       // RLS-restricted: returns only the caller's own row, or every row for admins.
@@ -215,9 +216,11 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
       supabase.from('gigs').select('*').order('created_at', { ascending: false }).limit(1000),
       supabase.from('applications').select('*').order('created_at', { ascending: false }).limit(1000),
       supabase.from('reports').select('*').order('created_at', { ascending: false }).limit(1000),
+      // Row-level security returns only addresses this user may see (own gigs, or accepted applications).
+      supabase.from('gig_private_details').select('*').limit(1000),
     ]);
 
-    const firstError = publicProfilesResult.error ?? ownUsersResult.error ?? workerProfilesResult.error ?? clientProfilesResult.error ?? gigsResult.error ?? applicationsResult.error ?? reportsResult.error;
+    const firstError = publicProfilesResult.error ?? ownUsersResult.error ?? workerProfilesResult.error ?? clientProfilesResult.error ?? gigsResult.error ?? applicationsResult.error ?? reportsResult.error ?? addressesResult.error;
     if (firstError) {
       setLoading(false);
       throw firstError;
@@ -236,7 +239,8 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     const mappedClientProfiles = clientProfileRows.map(mapClientProfile);
     const clientsByUserId = new Map(mappedClientProfiles.map((profile) => [profile.user_id, profile]));
     const mappedWorkerProfiles = workerProfileRows.map((profile) => mapWorkerProfile(profile, usersById));
-    const mappedGigs = gigRows.map((gig) => mapGig(gig, usersById, clientsByUserId));
+    const addressesByGigId = new Map(((addressesResult.data ?? []) as { gig_id: string; address: string }[]).map((row) => [row.gig_id, row.address] as const));
+    const mappedGigs = gigRows.map((gig) => mapGig(gig, usersById, clientsByUserId, addressesByGigId.get(gig.id) ?? ''));
     const gigsById = new Map(mappedGigs.map((gig) => [gig.id, gig]));
     const mappedApplications = applicationRows.map((application) => mapApplication(application, gigsById, usersById));
     const mappedReports = reportRows.map(mapReport);
@@ -293,7 +297,6 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
               description: data.description,
               category: data.category,
               location_area: data.location_area,
-              address_private: data.address_private,
               date: data.date,
               start_time: data.start_time,
               end_time: data.end_time,
@@ -308,9 +311,19 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
 
         if (error) throw error;
 
+        // The private address lives in its own table so only the owner and accepted workers can read it.
+        const { error: addressError } = await supabase
+          .from('gig_private_details')
+          .insert([{ gig_id: createdGig.id, address: data.address_private }]);
+        if (addressError) {
+          // Clients cannot delete gigs (no delete policy), so cancel it rather than leave an open gig without an address.
+          await supabase.from('gigs').update({ status: 'cancelled' }).eq('id', createdGig.id);
+          throw addressError;
+        }
+
         const usersById = new Map(users.map((user) => [user.id, user]));
         const clientsByUserId = new Map(clientProfiles.map((profile) => [profile.user_id, profile]));
-        const gig = mapGig(createdGig, usersById, clientsByUserId);
+        const gig = mapGig(createdGig, usersById, clientsByUserId, data.address_private);
         setGigs((current) => [gig, ...current]);
         return gig;
       }

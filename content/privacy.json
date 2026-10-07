@@ -1,0 +1,106 @@
+{
+  "title": "Privacy Policy",
+  "slug": "privacy",
+  "version": "privacy-0.1-draft",
+  "status": "draft",
+  "updated": "[DATE]",
+  "intro": "This policy explains what personal information QuickGig SA collects, why, who sees it, and your rights under the Protection of Personal Information Act (POPIA).",
+  "sections": [
+    {
+      "heading": "1. Who is responsible",
+      "body": [
+        "The responsible party is [BUSINESS NAME OR YOUR FULL NAME] of [REGISTERED ADDRESS]. Our Information Officer is [INFORMATION OFFICER NAME]. You can contact us at [CONTACT EMAIL]."
+      ]
+    },
+    {
+      "heading": "2. Information we collect",
+      "bullets": [
+        "Account details: name, email address, phone number, general location (for example a suburb or city), role (worker or client), and your login credentials (handled by our authentication provider).",
+        "Profile details you add: bio, skills, experience, business name and type, profile photo link.",
+        "Gig details: title, description, category, area, date and time, pay, requirements, and the private address you give for a gig.",
+        "Activity: your applications and messages, reviews you give or receive, and reports you make or that are made about you.",
+        "A record that you confirmed you are 18 or older and accepted our Terms and this policy, with the date and version.",
+        "Text you send to the AI writing assistant (the gig text you typed, without the private address).",
+        "Basic technical data our hosting and security tools record, such as IP address and error logs."
+      ]
+    },
+    {
+      "heading": "3. Information we do not want",
+      "body": [
+        "We do not collect ID numbers, bank details or card numbers, and we do not process payments. Please do not type them into profiles, gig descriptions or messages."
+      ]
+    },
+    {
+      "heading": "4. Why we use your information",
+      "bullets": [
+        "To create and run your account, and to let clients and workers find and contact each other.",
+        "To keep the platform safe: preventing fraud and scams, reviewing reports and removing harmful content.",
+        "To send service emails such as email verification and password resets.",
+        "To improve QuickGig SA and fix problems.",
+        "To meet our legal duties."
+      ]
+    },
+    {
+      "heading": "5. Who can see what",
+      "bullets": [
+        "Everyone can see gig details (not the private address), and public profile details such as name, area and reviews.",
+        "A client can see the name and application message of workers who apply to their gigs.",
+        "A worker whose application is accepted can see the gig's private address.",
+        "Your email address and phone number are not shown publicly. [CONFIRM EXACTLY WHAT THE APP SHARES WITH THE OTHER PARTY AFTER ACCEPTANCE BEFORE PUBLISHING.]",
+        "Our admins can see information needed to run and protect the platform."
+      ]
+    },
+    {
+      "heading": "6. Service providers and other countries",
+      "body": [
+        "We use service providers to run QuickGig SA: [Supabase] for the database and login, [Vercel] for hosting, [EMAIL PROVIDER] for service emails, and [Anthropic] for the AI writing assistant. They process information for us and may store it outside South Africa. We only use providers that agree to protect information to a standard comparable to POPIA. [CONFIRM PROVIDERS, THEIR LOCATIONS AND THE POPIA SECTION 72 BASIS.] We do not sell your information."
+      ]
+    },
+    {
+      "heading": "7. Consent",
+      "body": [
+        "When you sign up, you consent to us using your information as described here. You can withdraw consent by deleting your account, although we may need to keep some information where the law requires or to deal with a safety report."
+      ]
+    },
+    {
+      "heading": "8. How long we keep it",
+      "body": [
+        "We keep your information while your account is active. If you ask us to delete your account, we delete or anonymise your personal information within [30] days, except what we must keep for legal reasons or an open safety report. Backups are deleted on their normal cycle. [DECIDE AND CONFIRM THESE PERIODS.]"
+      ]
+    },
+    {
+      "heading": "9. Security",
+      "body": [
+        "We protect your information with access rules in our database, encrypted connections and limited admin access. No system is perfectly secure. If there is a breach that puts your information at risk, we will tell you and the Information Regulator as POPIA requires."
+      ]
+    },
+    {
+      "heading": "10. Your rights",
+      "bullets": [
+        "Ask what information we hold about you, and get a copy.",
+        "Ask us to correct information that is wrong.",
+        "Ask us to delete your information, or object to how we use it.",
+        "To use these rights, email [CONTACT EMAIL]. We will reply within a reasonable time.",
+        "You may complain to the Information Regulator (South Africa) at inforegulator.org.za. [CHECK CURRENT CONTACT DETAILS.]"
+      ]
+    },
+    {
+      "heading": "11. Children",
+      "body": [
+        "QuickGig SA is only for people who are 18 or older. If we learn that someone under 18 has an account, we will close it and delete their information."
+      ]
+    },
+    {
+      "heading": "12. Cookies and similar storage",
+      "body": [
+        "We use essential browser storage to keep you signed in and make the site work. [CONFIRM: NO ADVERTISING OR ANALYTICS COOKIES.]"
+      ]
+    },
+    {
+      "heading": "13. Changes to this policy",
+      "body": [
+        "We may update this policy. We will change the version and date at the top, and tell you about important changes."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "title": "Terms of Use",
+  "slug": "terms",
+  "version": "terms-0.1-draft",
+  "status": "draft",
+  "updated": "[DATE]",
+  "intro": "These terms explain how you may use QuickGig SA. By creating an account you agree to them. Please read them carefully.",
+  "sections": [
+    {
+      "heading": "1. About QuickGig SA",
+      "body": [
+        "QuickGig SA is run by [BUSINESS NAME OR YOUR FULL NAME] of [REGISTERED ADDRESS] (\"we\", \"us\"). Contact: [CONTACT EMAIL].",
+        "QuickGig SA is a platform that helps clients find workers for short-term gigs. We are not the employer of any worker, we are not a party to any agreement between a client and a worker, and we do not guarantee that any gig will be available, completed or paid."
+      ]
+    },
+    {
+      "heading": "2. Who can use QuickGig SA",
+      "bullets": [
+        "You must be 18 years or older. If you are under 18 you may not create an account.",
+        "The information you give us must be true and kept up to date.",
+        "You may have one account. Keep your password safe. You are responsible for what happens under your account."
+      ]
+    },
+    {
+      "heading": "3. Clients: posting gigs",
+      "bullets": [
+        "Describe the gig honestly: the work, the place, the time and the pay.",
+        "Only post lawful work that is safe to do.",
+        "Never ask a worker to pay a fee, a deposit or a \"registration\" charge, or to buy equipment for you, to get a gig.",
+        "Do not exclude people because of gender, race, nationality, religion, disability or any other unfair ground.",
+        "Do not put phone numbers, email addresses or your exact address in the public description. Use the private address field. It is shared only with a worker whose application you accept.",
+        "You are responsible for paying the agreed amount and for meeting any legal duties you have as a client."
+      ]
+    },
+    {
+      "heading": "4. Workers: applying for gigs",
+      "bullets": [
+        "Apply only for gigs you can do, and be honest in your application.",
+        "If you accept a gig, arrive on time and do the work as agreed. Tell the client early if you cannot.",
+        "You work as an independent person, not as our employee. You are responsible for your own taxes and any registrations the law requires.",
+        "Never pay anyone to get a gig. Report any gig that asks for money."
+      ]
+    },
+    {
+      "heading": "5. Payment",
+      "body": [
+        "Clients and workers agree on payment between themselves. QuickGig SA does not process payments, hold money or guarantee payment. Any payment dispute is between the client and the worker."
+      ]
+    },
+    {
+      "heading": "6. Staying safe",
+      "bullets": [
+        "For a first gig with someone new, tell a friend or family member where you are going, and prefer public or well-known places.",
+        "Do not share bank details, ID numbers or passwords with anyone through QuickGig SA.",
+        "Use the Report button if something feels wrong. In an emergency, contact the police or emergency services first."
+      ]
+    },
+    {
+      "heading": "7. What is not allowed",
+      "bullets": [
+        "Anything illegal, fake or misleading gigs, and scams of any kind.",
+        "Harassment, threats, discrimination or abusive messages.",
+        "Gigs involving weapons, illegal drugs, adult content or anything that puts people in danger.",
+        "Fake or paid-for reviews, or reviews of people you did not work with.",
+        "Trying to break, scrape or misuse the platform, or to access other people's information."
+      ]
+    },
+    {
+      "heading": "8. The AI writing assistant",
+      "body": [
+        "When you post a gig, you can ask an AI service to suggest clearer wording. This is optional. Only the gig text you typed is sent for this (not your private address), and suggestions can be wrong or incomplete. You are responsible for checking and editing anything before you post it. Do not put personal information about other people in a gig description."
+      ]
+    },
+    {
+      "heading": "9. Reviews and reports",
+      "body": [
+        "Reviews must be honest and based on a real gig. We may remove reviews or gigs that break these terms. We review reports in a reasonable time, and may suspend or close accounts that break these terms."
+      ]
+    },
+    {
+      "heading": "10. Content you post",
+      "body": [
+        "You keep ownership of what you post. You give us permission to display it on QuickGig SA so the platform can work. You confirm you have the right to post it."
+      ]
+    },
+    {
+      "heading": "11. Our responsibility",
+      "body": [
+        "QuickGig SA is provided as is. As far as the law allows, we are not responsible for what happens during a gig, for injuries or losses between clients and workers, for non-payment, or for information that users post. Nothing in these terms limits any right you have under South African law that cannot be limited. [LAWYER TO CONFIRM THIS WORDING, INCLUDING THE CONSUMER PROTECTION ACT.]"
+      ]
+    },
+    {
+      "heading": "12. Ending your account",
+      "body": [
+        "You may stop using QuickGig SA at any time and ask us to delete your account and information (see our Privacy Policy). We may suspend or close an account that breaks these terms. Email [CONTACT EMAIL]."
+      ]
+    },
+    {
+      "heading": "13. Changes to these terms",
+      "body": [
+        "We may update these terms. If we make an important change we will tell you, and ask you to accept the new version where the law requires it."
+      ]
+    },
+    {
+      "heading": "14. Law and disputes",
+      "body": [
+        "These terms are governed by the laws of South Africa. If you have a complaint, contact us first so we can try to resolve it. [LAWYER TO ADD WHICH COURT OR DISPUTE PROCESS APPLIES.]"
+      ]
+    }
+  ]
+}

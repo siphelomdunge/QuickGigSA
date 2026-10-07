@@ -4,6 +4,7 @@ import { useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { BriefcaseBusiness, MapPin, Sparkles, Wallet } from 'lucide-react';
 import { AuthGate } from '@/components/auth-gate';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -30,9 +31,13 @@ export default function PostGigPage() {
     setAssistNotes([]);
     try {
       // The private address is deliberately not sent.
+      const session = supabase ? (await supabase.auth.getSession()).data.session : null;
       const response = await fetch('/api/gig-assist', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(session ? { authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({
           title: read('title'), category: read('category'), location_area: read('location_area'),
           date: read('date'), start_time: read('start_time'), end_time: read('end_time'),
