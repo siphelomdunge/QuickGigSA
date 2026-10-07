@@ -88,3 +88,5 @@ I built this with AI assistance: I set the product scope, roles and data model, 
 ## Scripts
 
 `npm run dev`, `build`, `start`, `lint`, `typecheck`, `eval`
+
+<img width="1006" height="890" alt="Screenshot from 2026-10-06 13-29-22" src="https://github.com/user-attachments/assets/c45843ac-b225-4ca1-91b3-d951cffcad7f" />
