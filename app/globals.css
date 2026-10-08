@@ -53,13 +53,13 @@
   .dark {
     color-scheme: dark;
     --background: 8 13 26;
-    --surface: 17 24 42;
+    --surface: 20 28 48;
     --text: 241 245 249;
     --muted: 148 163 184;
     --grid-line: 226 232 240;
     --slate-50: 13 19 36;
     --slate-100: 23 31 52;
-    --slate-200: 36 47 72;
+    --slate-200: 42 54 82;
     --slate-300: 56 70 100;
     --slate-400: 110 125 155;
     --slate-500: 148 163 184;

@@ -60,6 +60,8 @@ const config: Config = {
       borderColor: { white: v('surface') },
       // Gradients keep their real brand colours in both themes.
       gradientColorStops: {
+        white: '#FFFFFF',
+        slate: { 600: '#475569', 700: '#334155', 800: '#1E293B', 900: '#0F172A', 950: '#020617' },
         primary: { 400: '#60A5FA', 500: '#3B82F6', 600: '#2563EB', 700: '#1D4ED8' },
         secondary: { 500: '#F97316', 600: '#EA580C' },
         accent: { 500: '#22C55E' },

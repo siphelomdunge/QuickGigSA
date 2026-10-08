@@ -133,7 +133,7 @@ function FloatingCard({ children, className = '', rotate = '0deg', delay = 0 }: 
 function HeroVisual() {
   return (
     <div className="relative mx-auto min-h-[460px] w-full max-w-xl overflow-visible px-2 py-8 sm:min-h-[520px]">
-      <div className="absolute inset-8 rounded-[2rem] bg-gradient-to-br from-primary/12 via-white/50 to-accent/12 shadow-glow-blue" />
+      <div className="absolute inset-8 rounded-[2rem] bg-gradient-to-br from-primary/12 via-white/50 to-accent/12 shadow-glow-blue dark:via-white/5" />
       <div className="absolute inset-x-10 top-16 h-40 skew-y-6 rounded-[2rem] bg-gradient-to-r from-primary/12 via-secondary/10 to-accent/12 blur-xl" />
 
       <FloatingCard className="absolute left-1 top-8 z-20 w-44 sm:left-0 sm:top-12" rotate="-5deg" delay={200}>
