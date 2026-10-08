@@ -16,7 +16,7 @@ A youth gig marketplace for South Africa. Clients post short-term gigs, workers 
 
 ## Run it
 
-Requires Node.js 20.19+ or 22.12+ (see `.nvmrc`). Older versions fail with `ERR_REQUIRE_ESM` when running the tests.
+Requires Node.js 22.22+ (see `.nvmrc`; `nvm install` picks it up). Older versions fail with `ERR_REQUIRE_ESM` or `EBADENGINE`.
 
 ```bash
 npm install
