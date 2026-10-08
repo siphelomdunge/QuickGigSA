@@ -8,6 +8,89 @@
 @layer base {
   :root {
     color-scheme: light;
+    --background: 246 248 252;
+    --surface: 255 255 255;
+    --text: 15 23 42;
+    --muted: 100 116 139;
+    --grid-line: 15 23 42;
+    --slate-50: 248 250 252;
+    --slate-100: 241 245 249;
+    --slate-200: 226 232 240;
+    --slate-300: 203 213 225;
+    --slate-400: 148 163 184;
+    --slate-500: 100 116 139;
+    --slate-600: 71 85 105;
+    --slate-700: 51 65 85;
+    --slate-800: 30 41 59;
+    --slate-900: 15 23 42;
+    --slate-950: 2 6 23;
+    --ink-900: 15 23 42;
+    --ink-950: 2 6 23;
+    --primary-50: 239 246 255;
+    --primary-100: 219 234 254;
+    --primary-700: 29 78 216;
+    --primary-800: 30 64 175;
+    --primary-900: 30 58 138;
+    --secondary-50: 255 247 237;
+    --secondary-100: 255 237 213;
+    --accent-50: 240 253 244;
+    --accent-100: 220 252 231;
+    --accent-700: 21 128 61;
+    --amber-50: 255 251 235;
+    --amber-200: 253 230 138;
+    --red-200: 254 202 202;
+    --green-200: 187 247 208;
+    --amber-700: 180 83 9;
+    --amber-900: 120 53 15;
+    --red-50: 254 242 242;
+    --red-600: 220 38 38;
+    --red-700: 185 28 28;
+    --orange-700: 194 65 12;
+    --orange-800: 154 52 18;
+  }
+
+  /* Dark theme: the slate scale is inverted so "text-slate-900 on bg-white" reads as light-on-dark everywhere. */
+  .dark {
+    color-scheme: dark;
+    --background: 8 13 26;
+    --surface: 17 24 42;
+    --text: 241 245 249;
+    --muted: 148 163 184;
+    --grid-line: 226 232 240;
+    --slate-50: 13 19 36;
+    --slate-100: 23 31 52;
+    --slate-200: 36 47 72;
+    --slate-300: 56 70 100;
+    --slate-400: 110 125 155;
+    --slate-500: 148 163 184;
+    --slate-600: 186 198 216;
+    --slate-700: 212 221 234;
+    --slate-800: 230 236 245;
+    --slate-900: 243 246 251;
+    --slate-950: 255 255 255;
+    --ink-900: 30 41 59;
+    --ink-950: 23 31 52;
+    --primary-50: 23 37 70;
+    --primary-100: 30 51 96;
+    --primary-700: 147 197 253;
+    --primary-800: 191 219 254;
+    --primary-900: 219 234 254;
+    --secondary-50: 58 30 12;
+    --secondary-100: 76 40 16;
+    --accent-50: 12 42 26;
+    --accent-100: 20 60 38;
+    --accent-700: 134 239 172;
+    --amber-50: 56 40 8;
+    --amber-200: 120 80 20;
+    --red-200: 120 40 40;
+    --green-200: 30 90 55;
+    --amber-700: 252 211 77;
+    --amber-900: 253 230 138;
+    --red-50: 60 20 20;
+    --red-600: 252 165 165;
+    --red-700: 254 202 202;
+    --orange-700: 253 186 116;
+    --orange-800: 254 215 170;
   }
 
   html {
@@ -40,6 +123,10 @@
 
   ::selection {
     @apply bg-primary-100 text-primary-900;
+  }
+
+  .dark .skeleton {
+    background-image: linear-gradient(90deg, rgb(23 31 52) 0%, rgb(36 47 72) 50%, rgb(23 31 52) 100%);
   }
 
   input[type='date']::-webkit-calendar-picker-indicator,

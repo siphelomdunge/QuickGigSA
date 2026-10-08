@@ -9,6 +9,7 @@ A youth gig marketplace for South Africa. Clients post short-term gigs, workers 
 - Three roles (worker, client, admin) with role-based pages
 - Post, browse and manage gigs; apply to gigs; review applicants
 - **Messaging** between a client and a worker, one thread per accepted application, with unread counts and read receipts
+- **Dark mode** (follows the system setting; toggle in the header)
 - **Notifications**: a bell in the header plus optional email when someone applies, a decision is made on an application, or a message arrives (see below)
 - Supabase schema with triggers and row-level security (workers see only their own applications, clients only their own gigs)
 - Runs without Supabase on mock data and `localStorage`, so you can try it with zero setup

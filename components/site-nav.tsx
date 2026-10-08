@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
-import { LogOut, Menu, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { LogOut, Menu, X, Zap } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useAuth } from '@/lib/auth';
 import { usePlatformStore } from '@/lib/platform-store';
 import { countUnread } from '@/lib/messaging';
@@ -47,6 +49,31 @@ function initials(name: string) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join('');
+}
+
+/**
+ * Full-screen menu rendered at the document root, so it can never be clipped or hidden by the
+ * sticky, blurred header it is opened from (which is what broke the old dropdown on some phones).
+ */
+function MobileSheet({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (event: KeyboardEvent) => event.key === 'Escape' && onClose();
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div className="fixed inset-0 z-[70] lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+      <button type="button" aria-label="Close menu" onClick={onClose} className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm" />
+      <div className="absolute inset-y-0 right-0 flex w-full max-w-sm animate-slide-in flex-col overflow-y-auto bg-white p-5 shadow-premium">{children}</div>
+    </div>,
+    document.body,
+  );
 }
 
 export function SiteNav() {
@@ -114,31 +141,64 @@ export function SiteNav() {
         )}
       </nav>
 
+      {/* Mobile: a Login shortcut is always visible so the account is reachable even without opening the menu. */}
+      {!user && !loading ? (
+        <Link href="/login" className="rounded-full bg-primary px-3.5 py-2 text-sm font-semibold text-white shadow-glow-blue lg:hidden">
+          Login
+        </Link>
+      ) : null}
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 lg:hidden"
         aria-label={open ? 'Close menu' : 'Open menu'}
         aria-expanded={open}
+        aria-controls="mobile-menu"
       >
         {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
       {open ? (
-        <div className="absolute inset-x-0 top-[calc(100%+0.5rem)] z-50 animate-scale-in rounded-3xl border border-slate-200/80 bg-white p-3 shadow-premium lg:hidden">
-          <nav className="grid gap-1" aria-label="Mobile">
+        <MobileSheet onClose={() => setOpen(false)}>
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-2 font-display text-lg font-semibold text-slate-950">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 text-white">
+                <Zap className="h-4 w-4 fill-white" />
+              </span>
+              Menu
+            </span>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close menu"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          <nav className="mt-6 grid gap-1" aria-label="Mobile" id="mobile-menu">
             {links.map((link) => (
-              <Link key={link.href} href={link.href} className={cn(linkClass(link.href), 'flex items-center justify-between px-4 py-3 text-base')}>
+              <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className={cn(linkClass(link.href), 'flex items-center justify-between rounded-2xl px-4 py-3.5 text-base')}>
                 {link.label}
                 {link.href === '/messages' && unread ? <UnreadBadge count={unread} /> : null}
               </Link>
             ))}
-          </nav>
-          <div className="mt-3 border-t border-slate-100 pt-3">
             {user ? (
-              <div className="flex items-center justify-between gap-3 px-2">
+              <Link href="/notifications" onClick={() => setOpen(false)} className={cn(linkClass('/notifications'), 'flex items-center justify-between rounded-2xl px-4 py-3.5 text-base')}>
+                Notifications
+              </Link>
+            ) : null}
+          </nav>
+
+          <div className="mt-auto border-t border-slate-200 pt-4">
+            {user ? (
+              <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">
                     {initials(fullName) || 'QG'}
                   </span>
                   <div className="min-w-0">
@@ -146,23 +206,30 @@ export function SiteNav() {
                     <p className="text-xs uppercase tracking-wider text-slate-500">{role}</p>
                   </div>
                 </div>
-                <button disabled={loading} onClick={signOut} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">
+                <button
+                  disabled={loading}
+                  onClick={() => {
+                    setOpen(false);
+                    signOut();
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700"
+                >
                   <LogOut className="h-4 w-4" />
                   Sign out
                 </button>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2">
-                <Link href="/login" className="rounded-full border border-slate-200 px-4 py-3 text-center text-sm font-semibold text-slate-700">
+                <Link href="/login" onClick={() => setOpen(false)} className="rounded-full border border-slate-200 px-4 py-3 text-center text-sm font-semibold text-slate-700">
                   Login
                 </Link>
-                <Link href="/register" className="rounded-full bg-primary px-4 py-3 text-center text-sm font-semibold text-white shadow-glow-blue">
+                <Link href="/register" onClick={() => setOpen(false)} className="rounded-full bg-primary px-4 py-3 text-center text-sm font-semibold text-white shadow-glow-blue">
                   Get started
                 </Link>
               </div>
             )}
           </div>
-        </div>
+        </MobileSheet>
       ) : null}
     </>
   );

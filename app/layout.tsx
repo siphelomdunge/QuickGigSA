@@ -6,6 +6,7 @@ import { Zap } from 'lucide-react';
 import { Providers } from './providers';
 import { SiteNav } from '@/components/site-nav';
 import { NotificationBell } from '@/components/notification-bell';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { DemoModeBanner } from '@/components/demo-mode-banner';
 
 export const metadata: Metadata = {
@@ -14,25 +15,28 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#2563EB',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#2563EB' },
+    { media: '(prefers-color-scheme: dark)', color: '#080D1A' },
+  ],
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-background text-text antialiased">
         {/* Ambient background: soft colour orbs + a faint grid, fixed behind everything. */}
         <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
           <div className="absolute inset-0 bg-grid-slate [background-size:32px_32px] [mask-image:linear-gradient(to_bottom,black,transparent_60%)] opacity-70" />
-          <div className="absolute -left-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-primary-200/40 blur-3xl" />
-          <div className="absolute -right-40 top-1/4 h-[28rem] w-[28rem] rounded-full bg-secondary-100/60 blur-3xl" />
-          <div className="absolute bottom-0 left-1/3 h-[24rem] w-[24rem] rounded-full bg-accent-100/50 blur-3xl" />
+          <div className="absolute -left-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-primary-200/40 blur-3xl dark:bg-primary-600/10" />
+          <div className="absolute -right-40 top-1/4 h-[28rem] w-[28rem] rounded-full bg-secondary-100/60 blur-3xl dark:bg-secondary-500/10" />
+          <div className="absolute bottom-0 left-1/3 h-[24rem] w-[24rem] rounded-full bg-accent-100/50 blur-3xl dark:bg-accent-500/10" />
         </div>
 
         <Providers>
           <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
             <header className="sticky top-3 z-40 mb-8 before:pointer-events-none before:absolute before:inset-x-[-1rem] before:-top-3 before:h-[calc(100%+0.75rem)] before:bg-gradient-to-b before:from-background before:via-background/90 before:to-transparent sm:before:inset-x-[-1.5rem]">
-              <div className="relative flex items-center justify-between gap-4 rounded-full border border-white/70 bg-white/80 py-2.5 pl-3 pr-3 shadow-card backdrop-blur-xl">
+              <div className="relative flex items-center justify-between gap-4 rounded-full border border-slate-200/70 bg-white/80 py-2.5 pl-3 pr-3 shadow-card backdrop-blur-xl">
                 <Link href="/" className="group inline-flex items-center gap-2.5 text-lg font-semibold text-slate-950">
                   <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary-500 via-primary-600 to-secondary-500 text-white shadow-glow-blue ring-1 ring-inset ring-white/30 transition group-hover:scale-105">
                     <Zap className="h-4 w-4 fill-white" />
@@ -42,6 +46,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   </span>
                 </Link>
                 <div className="flex items-center gap-2">
+                  <ThemeToggle className="hidden sm:inline-flex" />
                   <NotificationBell />
                   <SiteNav />
                 </div>
