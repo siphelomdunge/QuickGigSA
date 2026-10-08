@@ -22,7 +22,7 @@ Requires Node.js 22.22+ (see `.nvmrc`; `nvm install` picks it up). Older version
 ```bash
 npm install
 cp .env.example .env.local   # optional: add Supabase and/or Anthropic keys
-npm run dev                  # http://localhost:3000
+npm run dev                  # http://localhost:3000 (phones on the same Wi-Fi: use the "Network" URL Next prints)
 ```
 
 ### Supabase (optional)
