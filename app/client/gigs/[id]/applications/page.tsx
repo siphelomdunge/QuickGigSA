@@ -2,7 +2,7 @@
 
 import { use } from 'react';
 import Link from 'next/link';
-import { Check, CheckCircle2, MapPin, Star, X } from 'lucide-react';
+import { Check, CheckCircle2, MapPin, MessageSquare, Star, X } from 'lucide-react';
 import { AuthGate } from '@/components/auth-gate';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -88,14 +88,27 @@ export default function ClientGigApplicationsPage({ params }: ApplicationsPagePr
                     </div>
 
                     <div className="flex flex-col gap-3 sm:flex-row xl:flex-col">
-                      <Button variant="secondary" className="gap-2" onClick={() => updateApplicationStatus(application.id, 'accepted')}>
-                        <Check className="h-4 w-4" />
-                        Accept
-                      </Button>
-                      <Button variant="outline" className="gap-2" onClick={() => updateApplicationStatus(application.id, 'rejected')}>
-                        <X className="h-4 w-4" />
-                        Reject
-                      </Button>
+                      {application.status === 'accepted' || application.status === 'completed' ? (
+                        <Link
+                          href={`/messages/${application.id}`}
+                          className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-primary-500 to-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-glow-blue ring-1 ring-inset ring-white/20 transition hover:shadow-lift"
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          Message worker
+                        </Link>
+                      ) : null}
+                      {application.status === 'pending' ? (
+                        <>
+                          <Button variant="secondary" className="gap-2" onClick={() => updateApplicationStatus(application.id, 'accepted')}>
+                            <Check className="h-4 w-4" />
+                            Accept
+                          </Button>
+                          <Button variant="outline" className="gap-2" onClick={() => updateApplicationStatus(application.id, 'rejected')}>
+                            <X className="h-4 w-4" />
+                            Reject
+                          </Button>
+                        </>
+                      ) : null}
                       <Button
                         variant="outline"
                         className="gap-2"

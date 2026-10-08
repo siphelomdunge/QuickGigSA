@@ -7,6 +7,7 @@ import {
   type ClientProfile,
   type Gig,
   type GigStatus,
+  type Message,
   type Report,
   type ReportStatus,
   type User,
@@ -15,6 +16,7 @@ import {
   mockApplications,
   mockClientProfiles,
   mockGigs,
+  mockMessages,
   mockReports,
   mockUsers,
   mockWorkerProfiles,
@@ -30,6 +32,7 @@ type UserRow = Database['public']['Tables']['users']['Row'];
 type WorkerProfileRow = Database['public']['Tables']['worker_profiles']['Row'];
 type ClientProfileRow = Database['public']['Tables']['client_profiles']['Row'];
 type ReportRow = Database['public']['Tables']['reports']['Row'];
+type MessageRow = Database['public']['Tables']['messages']['Row'];
 // public.public_profiles is a DB view (see 20260528000000 migration) exposing only
 // non-sensitive columns of `users` to every authenticated user.
 type PublicProfileRow = Database['public']['Views']['public_profiles']['Row'];
@@ -41,11 +44,14 @@ interface PlatformStoreValue {
   gigs: Gig[];
   applications: Application[];
   reports: Report[];
+  messages: Message[];
   loading: boolean;
   isSupabaseConnected: boolean;
   createGig: (data: CreateGigInput) => Promise<Gig>;
   applyToGig: (data: { gig_id: string; worker_id: string; worker_name: string; message: string }) => Promise<Application>;
   createReport: (data: CreateReportInput) => Promise<Report>;
+  sendMessage: (data: { application_id: string; sender_id: string; body: string }) => Promise<Message>;
+  markThreadRead: (application_id: string, reader_id: string) => Promise<void>;
   updateApplicationStatus: (id: string, status: ApplicationStatus) => Promise<void>;
   updateGigStatus: (id: string, status: GigStatus) => Promise<void>;
   updateVerificationStatus: (profileType: 'worker' | 'client', profileId: string, status: VerificationStatus) => Promise<void>;
@@ -189,6 +195,7 @@ function getInitialState() {
     gigs: mockGigs,
     applications: mockApplications,
     reports: mockReports,
+    messages: mockMessages,
   };
 }
 
@@ -199,6 +206,7 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
   const [gigs, setGigs] = useState<Gig[]>(mockGigs);
   const [applications, setApplications] = useState<Application[]>(mockApplications);
   const [reports, setReports] = useState<Report[]>(mockReports);
+  const [messages, setMessages] = useState<Message[]>(mockMessages);
   const [loading, setLoading] = useState(true);
   const isSupabaseConnected = Boolean(supabase);
 
@@ -206,7 +214,7 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     if (!supabase) return;
 
     setLoading(true);
-    const [publicProfilesResult, ownUsersResult, workerProfilesResult, clientProfilesResult, gigsResult, applicationsResult, reportsResult, addressesResult] = await Promise.all([
+    const [publicProfilesResult, ownUsersResult, workerProfilesResult, clientProfilesResult, gigsResult, applicationsResult, reportsResult, addressesResult, messagesResult] = await Promise.all([
       // Safe for everyone: names/locations only, no email or phone (see public_profiles view).
       supabase.from('public_profiles').select('*').order('created_at', { ascending: false }).limit(1000),
       // RLS-restricted: returns only the caller's own row, or every row for admins.
@@ -218,9 +226,11 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
       supabase.from('reports').select('*').order('created_at', { ascending: false }).limit(1000),
       // Row-level security returns only addresses this user may see (own gigs, or accepted applications).
       supabase.from('gig_private_details').select('*').limit(1000),
+      // RLS: only threads the caller is a party to (or all, for admins).
+      supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(5000),
     ]);
 
-    const firstError = publicProfilesResult.error ?? ownUsersResult.error ?? workerProfilesResult.error ?? clientProfilesResult.error ?? gigsResult.error ?? applicationsResult.error ?? reportsResult.error ?? addressesResult.error;
+    const firstError = publicProfilesResult.error ?? ownUsersResult.error ?? workerProfilesResult.error ?? clientProfilesResult.error ?? gigsResult.error ?? applicationsResult.error ?? reportsResult.error ?? addressesResult.error ?? messagesResult.error;
     if (firstError) {
       setLoading(false);
       throw firstError;
@@ -251,6 +261,7 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     setGigs(mappedGigs);
     setApplications(mappedApplications);
     setReports(mappedReports);
+    setMessages((messagesResult.data ?? []) as MessageRow[]);
     setLoading(false);
   }, []);
 
@@ -276,10 +287,11 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
         stored = null;
       }
       if (stored) {
-        const parsed = JSON.parse(stored) as { gigs?: Gig[]; applications?: Application[]; reports?: Report[] };
+        const parsed = JSON.parse(stored) as { gigs?: Gig[]; applications?: Application[]; reports?: Report[]; messages?: Message[] };
         setGigs(parsed.gigs?.length ? parsed.gigs : mockGigs);
         setApplications(parsed.applications?.length ? parsed.applications : mockApplications);
         setReports(parsed.reports?.length ? parsed.reports : mockReports);
+        setMessages(parsed.messages ?? mockMessages);
       }
     } finally {
       setLoading(false);
@@ -289,13 +301,13 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
   useEffect(() => {
     if (!supabase && !loading) {
       try {
-        window.localStorage.setItem(STORE_KEY, JSON.stringify({ gigs, applications, reports }));
+        window.localStorage.setItem(STORE_KEY, JSON.stringify({ gigs, applications, reports, messages }));
       } catch (error) {
         // Safari private mode / storage full: keep working in memory for this session.
         console.warn('[store] Could not persist demo data:', error);
       }
     }
-  }, [applications, gigs, loading, reports]);
+  }, [applications, gigs, loading, messages, reports]);
 
   const createGig = useCallback(
     async (data: CreateGigInput) => {
@@ -500,6 +512,60 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     [],
   );
 
+  const sendMessage = useCallback(
+    async ({ application_id, sender_id, body }: { application_id: string; sender_id: string; body: string }) => {
+      const trimmed = body.trim();
+      if (!trimmed) throw new Error('Write a message first.');
+      if (trimmed.length > 2000) throw new Error('Messages are limited to 2000 characters.');
+
+      if (supabase) {
+        const { data, error } = await supabase.from('messages').insert([{ application_id, sender_id, body: trimmed }]).select('*').single();
+        if (error) throw error;
+        const message = data as MessageRow;
+        setMessages((current) => (current.some((item) => item.id === message.id) ? current : [...current, message]));
+        return message;
+      }
+
+      const application = applications.find((item) => item.id === application_id);
+      if (!application) throw new Error('This conversation no longer exists.');
+      if (application.status !== 'accepted' && application.status !== 'completed') {
+        throw new Error('Messaging opens once the application is accepted.');
+      }
+      const gig = gigs.find((item) => item.id === application.gig_id);
+      if (sender_id !== application.worker_id && sender_id !== gig?.client_id) {
+        throw new Error('Only the client and the accepted worker can message here.');
+      }
+
+      const message: Message = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        application_id,
+        sender_id,
+        body: trimmed,
+        created_at: new Date().toISOString(),
+        read_at: null,
+      };
+      setMessages((current) => [...current, message]);
+      return message;
+    },
+    [applications, gigs],
+  );
+
+  const markThreadRead = useCallback(
+    async (application_id: string, reader_id: string) => {
+      const unreadIds = messages.filter((m) => m.application_id === application_id && m.sender_id !== reader_id && !m.read_at).map((m) => m.id);
+      if (!unreadIds.length) return;
+      const now = new Date().toISOString();
+
+      if (supabase) {
+        const { error } = await supabase.from('messages').update({ read_at: now }).in('id', unreadIds);
+        if (error) throw error;
+      }
+
+      setMessages((current) => current.map((m) => (unreadIds.includes(m.id) ? { ...m, read_at: now } : m)));
+    },
+    [messages],
+  );
+
   const resetDemoData = useCallback(() => {
     if (supabase) {
       loadSupabaseData().catch(() => undefined);
@@ -513,6 +579,7 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     setGigs(initialState.gigs);
     setApplications(initialState.applications);
     setReports(initialState.reports);
+    setMessages(initialState.messages);
     try {
       window.localStorage.removeItem(STORE_KEY);
     } catch {
@@ -528,11 +595,14 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
       gigs,
       applications,
       reports,
+      messages,
       loading,
       isSupabaseConnected,
       createGig,
       applyToGig,
       createReport,
+      sendMessage,
+      markThreadRead,
       updateApplicationStatus,
       updateGigStatus,
       updateVerificationStatus,
@@ -544,6 +614,9 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     [
       applications,
       applyToGig,
+      messages,
+      sendMessage,
+      markThreadRead,
       clientProfiles,
       createGig,
       createReport,

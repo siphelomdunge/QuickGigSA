@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { usePlatformStore } from '@/lib/platform-store';
+import { countUnread } from '@/lib/messaging';
 import { cn } from '@/lib/utils';
 
 type NavLink = { href: string; label: string };
@@ -13,12 +15,14 @@ const roleLinks: Record<string, NavLink[]> = {
   worker: [
     { href: '/worker/dashboard', label: 'Dashboard' },
     { href: '/worker/applications', label: 'My applications' },
+    { href: '/messages', label: 'Messages' },
     { href: '/worker/profile', label: 'Profile' },
   ],
   client: [
     { href: '/client/dashboard', label: 'Dashboard' },
     { href: '/client/post-gig', label: 'Post gig' },
     { href: '/client/manage-gigs', label: 'Manage gigs' },
+    { href: '/messages', label: 'Messages' },
     { href: '/client/profile', label: 'Business profile' },
   ],
   admin: [
@@ -27,6 +31,14 @@ const roleLinks: Record<string, NavLink[]> = {
     { href: '/admin/reports', label: 'Reports' },
   ],
 };
+
+function UnreadBadge({ count }: { count: number }) {
+  return (
+    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1.5 text-[10px] font-bold text-white" aria-label={`${count} unread`}>
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
 
 function initials(name: string) {
   return name
@@ -40,6 +52,8 @@ function initials(name: string) {
 export function SiteNav() {
   const { user, role, signOut, loading } = useAuth();
   const pathname = usePathname();
+  const { applications, gigs, users, messages } = usePlatformStore();
+  const unread = user ? countUnread({ userId: user.id, applications, gigs, users, messages }) : 0;
   const [open, setOpen] = useState(false);
   // Close the mobile menu when the route changes (derived state reset, no effect needed).
   const [openedOn, setOpenedOn] = useState(pathname);
@@ -61,8 +75,9 @@ export function SiteNav() {
     <>
       <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
         {links.map((link) => (
-          <Link key={link.href} href={link.href} className={linkClass(link.href)}>
+          <Link key={link.href} href={link.href} className={cn(linkClass(link.href), 'inline-flex items-center gap-1.5')}>
             {link.label}
+            {link.href === '/messages' && unread ? <UnreadBadge count={unread} /> : null}
           </Link>
         ))}
         <span className="mx-2 h-6 w-px bg-slate-200" />
@@ -113,8 +128,9 @@ export function SiteNav() {
         <div className="absolute inset-x-0 top-[calc(100%+0.5rem)] z-50 animate-scale-in rounded-3xl border border-slate-200/80 bg-white p-3 shadow-premium lg:hidden">
           <nav className="grid gap-1" aria-label="Mobile">
             {links.map((link) => (
-              <Link key={link.href} href={link.href} className={cn(linkClass(link.href), 'px-4 py-3 text-base')}>
+              <Link key={link.href} href={link.href} className={cn(linkClass(link.href), 'flex items-center justify-between px-4 py-3 text-base')}>
                 {link.label}
+                {link.href === '/messages' && unread ? <UnreadBadge count={unread} /> : null}
               </Link>
             ))}
           </nav>

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CalendarDays, MapPin, Wallet } from 'lucide-react';
+import { CalendarDays, MapPin, MessageSquare, Wallet } from 'lucide-react';
 import { AuthGate } from '@/components/auth-gate';
 import { EmptyState } from '@/components/ui/empty-state';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -49,9 +49,20 @@ export default function WorkerApplicationsPage() {
                       </div>
                       <p className="max-w-3xl text-sm leading-6 text-slate-500">{application.message}</p>
                     </div>
-                    <Link href={`/gigs/${application.gig_id}`} className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
-                      View gig
-                    </Link>
+                    <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">
+                      {application.status === 'accepted' || application.status === 'completed' ? (
+                        <Link
+                          href={`/messages/${application.id}`}
+                          className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-primary-500 to-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-glow-blue ring-1 ring-inset ring-white/20 transition hover:shadow-lift"
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          Message client
+                        </Link>
+                      ) : null}
+                      <Link href={`/gigs/${application.gig_id}`} className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                        View gig
+                      </Link>
+                    </div>
                   </div>
                 </article>
               );

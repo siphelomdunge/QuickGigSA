@@ -159,6 +159,25 @@ export interface Database {
         };
         Update: Partial<Database['public']['Tables']['applications']['Insert']>;
       };
+      messages: {
+        Row: {
+          id: string;
+          application_id: string;
+          sender_id: string;
+          body: string;
+          created_at: string;
+          read_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          application_id: string;
+          sender_id: string;
+          body: string;
+          created_at?: string;
+          read_at?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['messages']['Insert']>;
+      };
       reviews: {
         Row: {
           id: string;

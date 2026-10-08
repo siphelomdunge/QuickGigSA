@@ -7,3 +7,8 @@ afterEach(() => {
   vi.restoreAllMocks();
   if (typeof window !== 'undefined') window.localStorage.clear();
 });
+
+// jsdom does not implement scrollIntoView.
+if (typeof window !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}

@@ -8,6 +8,7 @@ A youth gig marketplace for South Africa. Clients post short-term gigs, workers 
 
 - Three roles (worker, client, admin) with role-based pages
 - Post, browse and manage gigs; apply to gigs; review applicants
+- **Messaging** between a client and a worker, one thread per accepted application, with unread counts and read receipts
 - Supabase schema with triggers and row-level security (workers see only their own applications, clients only their own gigs)
 - Runs without Supabase on mock data and `localStorage`, so you can try it with zero setup
 - **AI gig-writing assistant** on the Post a gig page (see below)
@@ -70,13 +71,14 @@ The database rules in `supabase/migrations/` enforce access, not just the UI:
 - Signups can only be `worker` or `client`. Roles, `verification_status` and `rating` can be changed only by an admin or by trusted server-side code. To create the first admin, run this in the Supabase SQL editor: `update public.users set role = 'admin' where email = 'you@example.com';`
 - The private address lives in `gig_private_details`. Only the gig owner, an admin, or a worker with an accepted application can read it.
 - Reviews are limited to the two people on an accepted application, once each.
+- Messages (`messages` table) can only be read and sent by the gig owner and the worker on an application, and only once it is accepted or completed. Admins can read threads for moderation but not write. Messages are immutable; only the recipient can set `read_at`.
 - An application's gig, worker and message cannot be changed once created (only its status).
 
 Check these rules locally with no Supabase account (it starts a throwaway Postgres with a stand-in for Supabase's auth):
 
 ```bash
 pip install pgserver psycopg2-binary
-python supabase/tests/rls_security_test.py              # expect 32/32 passing
+python supabase/tests/rls_security_test.py              # expect 56/56 passing
 python supabase/tests/rls_security_test.py --baseline   # skips the fixes, so you can see the holes they close
 ```
 

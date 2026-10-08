@@ -26,6 +26,9 @@ import GigPage from '@/app/gigs/[id]/page';
 import ClientGigApplicationsPage from '@/app/client/gigs/[id]/applications/page';
 import WorkerApplicationsPage from '@/app/worker/applications/page';
 import WorkerProfilePage from '@/app/worker/profile/page';
+import MessagesPage from '@/app/messages/page';
+import ThreadPage from '@/app/messages/[applicationId]/page';
+import { SiteNav } from '@/components/site-nav';
 import { useAuth } from '@/lib/auth';
 import { usePlatformStore } from '@/lib/platform-store';
 
@@ -210,6 +213,79 @@ describe('demo mode: gig lifecycle', () => {
     await user.click(screen.getByRole('button', { name: 'Apply for this Gig' }));
     expect(await screen.findByText('Please use a worker account to apply for gigs.')).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+});
+
+describe('demo mode: messaging', () => {
+  function threadParams(applicationId: string): Promise<{ applicationId: string }> {
+    const promise = Promise.resolve({ applicationId }) as Promise<{ applicationId: string }> & { status?: string; value?: unknown };
+    promise.status = 'fulfilled';
+    promise.value = { applicationId };
+    return promise;
+  }
+
+  it('opens a thread on acceptance; both sides can message; unread counts and read receipts update', async () => {
+    const user = userEvent.setup();
+
+    // Seeded: app_1 is Thandi (user_4) pending on gig_1 (Khumalo Eats / nandi). No thread yet.
+    await loginAs('thandi@example.com');
+    let view = renderWithProviders(<ThreadPage params={threadParams('app_1')} />);
+    expect(await screen.findByText('Conversation not available')).toBeInTheDocument();
+    view.unmount();
+
+    // Client accepts → thread opens.
+    await loginAs('nandi@example.com');
+    view = renderWithProviders(<ClientGigApplicationsPage params={params('gig_1')} />);
+    const card = (await screen.findByText('Thandi Jacobs')).closest('article')!;
+    await user.click(within(card).getByRole('button', { name: /accept/i }));
+    expect(await within(card).findByRole('link', { name: /message worker/i })).toHaveAttribute('href', '/messages/app_1');
+    view.unmount();
+
+    // Client sends the first message.
+    view = renderWithProviders(<ThreadPage params={threadParams('app_1')} />);
+    const box = await screen.findByLabelText('Message');
+    await user.type(box, 'Hi Thandi, meet at the stall at 09:45 please.');
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
+    const log = () => within(screen.getByRole('log'));
+    expect(await log().findByText('Hi Thandi, meet at the stall at 09:45 please.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Message')).toHaveValue('');
+    expect(log().getByLabelText('Sent')).toBeInTheDocument(); // single tick: not yet read
+    view.unmount();
+
+    // Worker sees 1 unread in the nav and in the inbox, opens it, replies.
+    await loginAs('thandi@example.com');
+    view = renderWithProviders(
+      <>
+        <SiteNav />
+        <MessagesPage />
+      </>,
+    );
+    expect(await screen.findByLabelText('1 unread')).toBeInTheDocument();
+    const row = await screen.findByRole('link', { name: /Khumalo Eats/ });
+    expect(row).toHaveAttribute('href', '/messages/app_1');
+    view.unmount();
+
+    view = renderWithProviders(<ThreadPage params={threadParams('app_1')} />);
+    expect(await log().findByText('Hi Thandi, meet at the stall at 09:45 please.')).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Message'), 'Great, see you then!{Enter}'); // Enter sends
+    expect(await log().findByText('Great, see you then!')).toBeInTheDocument();
+    view.unmount();
+
+    // Back as the client: Thandi's reply + the seeded unread from Anele (msg_2) → 2 unread; the first message now shows as read.
+    await loginAs('nandi@example.com');
+    view = renderWithProviders(<SiteNav />);
+    expect(await screen.findByLabelText('2 unread')).toBeInTheDocument();
+    view.unmount();
+    renderWithProviders(<ThreadPage params={threadParams('app_1')} />);
+    expect(await log().findByText('Great, see you then!')).toBeInTheDocument();
+    expect(await log().findByLabelText('Read')).toBeInTheDocument();
+  });
+
+  it('a stranger cannot open someone else\'s thread', async () => {
+    await loginAs('musa@example.com'); // another client
+    renderWithProviders(<ThreadPage params={threadParams('app_2')} />);
+    expect(await screen.findByText('Conversation not available')).toBeInTheDocument();
+    expect(screen.queryByText(/back entrance on Long Street/)).not.toBeInTheDocument();
   });
 });
 

@@ -214,6 +214,52 @@ check("A worker cannot post a gig", blocked(r))
 r = attempt(worker3, ("insert into public.applications (gig_id, worker_id, message) values (%s, %s, 'hi')", (str(gig), str(worker3))))
 check("A worker can apply to an open gig", not blocked(r) and r == 1, str(r))
 
+# ---- 7. messaging -----------------------------------------------------------------------------
+if not BASELINE:
+    accepted_app = admin("select id from public.applications where worker_id = %s", (str(worker1),))[0][0]  # accepted
+    pending_app = admin("select id from public.applications where worker_id = %s", (str(worker2),))[0][0]   # pending
+
+    def send(user, app, body="hello", as_user=None):
+        return attempt(user, ("insert into public.messages (application_id, sender_id, body) values (%s, %s, %s)",
+                              (str(app), str(as_user or user), body)))
+
+    def read(user, app):
+        return attempt(user, ("select body from public.messages where application_id = %s", (str(app),)))
+
+    check("Accepted worker can message the client", not blocked(send(worker1, accepted_app)) and send(worker1, accepted_app) == 1)
+    check("Gig owner can message the accepted worker", not blocked(send(client1, accepted_app)) and send(client1, accepted_app) == 1)
+    check("Pending applicant cannot message before acceptance", blocked(send(worker2, pending_app)))
+    check("Client cannot message a pending applicant", blocked(send(client1, pending_app)))
+    check("Unrelated worker cannot message on someone else's application", blocked(send(worker3, accepted_app)))
+    check("Another client cannot message on someone else's application", blocked(send(client2, accepted_app)))
+    check("Nobody can forge the sender", blocked(send(worker1, accepted_app, as_user=client1)))
+    check("Logged-out visitor cannot message", blocked(send(None, accepted_app, as_user=worker1)))
+    check("Empty messages are rejected", blocked(send(worker1, accepted_app, body="   ")))
+    check("Oversized messages are rejected", blocked(send(worker1, accepted_app, body="x" * 2001)))
+
+    msg = uuid.uuid4()
+    admin("insert into public.messages (id, application_id, sender_id, body) values (%s, %s, %s, 'secret plan')",
+          (str(msg), str(accepted_app), str(worker1)))
+    check("Both participants can read the thread", read(worker1, accepted_app) == [("secret plan",)] and read(client1, accepted_app) == [("secret plan",)])
+    check("Admin can read the thread (moderation)", read(boss, accepted_app) == [("secret plan",)])
+    check("Admin cannot write into a thread", blocked(send(boss, accepted_app)))
+    check("Unrelated users cannot read the thread", (blocked(read(worker3, accepted_app)) or read(worker3, accepted_app) == [])
+          and (blocked(read(client2, accepted_app)) or read(client2, accepted_app) == []))
+    check("Logged-out visitors cannot read messages", blocked(read(None, accepted_app)) or read(None, accepted_app) == [])
+
+    r = attempt(worker1, ("update public.messages set body = 'edited' where id = %s", (str(msg),)),
+                "select body from public.messages where id = '%s'" % msg)
+    check("The sender cannot edit a sent message", blocked(r) or r[0][0] == "secret plan")
+    r = attempt(client1, ("update public.messages set body = 'edited' where id = %s", (str(msg),)),
+                "select body from public.messages where id = '%s'" % msg)
+    check("The recipient cannot edit a message either", blocked(r) or r[0][0] == "secret plan")
+    r = attempt(client1, ("update public.messages set read_at = now() where id = %s", (str(msg),)))
+    check("The recipient can mark a message read", not blocked(r) and r == 1, str(r))
+    r = attempt(worker1, ("update public.messages set read_at = now() where id = %s", (str(msg),)))
+    check("The sender cannot mark their own message read", blocked(r) or r == 0)
+    r = attempt(worker1, ("delete from public.messages where id = %s", (str(msg),)))
+    check("Messages cannot be deleted by users", blocked(r) or r == 0)
+
 # ---- report -----------------------------------------------------------------------------------
 width = max(len(n) for n, _, _ in results)
 print("\nMODE:", "BASELINE (without security fixes)" if BASELINE else "WITH security fixes")

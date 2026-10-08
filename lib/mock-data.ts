@@ -76,6 +76,15 @@ export interface Application {
   updated_at: string;
 }
 
+export interface Message {
+  id: string;
+  application_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+  read_at: string | null;
+}
+
 export interface Report {
   id: string;
   reported_by: string;
@@ -355,6 +364,26 @@ export const mockApplications: Application[] = [
     status: 'completed',
     created_at: '2026-05-24',
     updated_at: '2026-05-25',
+  },
+];
+
+// app_2: Anele (user_1) accepted by Khumalo Eats (user_2) for the delivery runner gig.
+export const mockMessages: Message[] = [
+  {
+    id: 'msg_1',
+    application_id: 'app_2',
+    sender_id: 'user_2',
+    body: 'Hi Anele, thanks for applying! Please meet at the back entrance on Long Street at 08:45 so we can load the parcels.',
+    created_at: '2026-05-29T09:15:00.000Z',
+    read_at: '2026-05-29T09:40:00.000Z',
+  },
+  {
+    id: 'msg_2',
+    application_id: 'app_2',
+    sender_id: 'user_1',
+    body: 'Perfect, I will be there. Do I need my own bag for the parcels?',
+    created_at: '2026-05-29T09:42:00.000Z',
+    read_at: null,
   },
 ];
 
