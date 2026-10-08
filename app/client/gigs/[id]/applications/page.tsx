@@ -1,6 +1,6 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Check, CheckCircle2, MapPin, MessageSquare, Star, X } from 'lucide-react';
 import { AuthGate } from '@/components/auth-gate';
@@ -15,7 +15,18 @@ interface ApplicationsPageProps {
 
 export default function ClientGigApplicationsPage({ params }: ApplicationsPageProps) {
   const { id } = use(params);
-  const { gigs, applications, users, workerProfiles, updateApplicationStatus } = usePlatformStore();
+  const { gigs, applications, users, workerProfiles, notifications, updateApplicationStatus, markNotificationsRead } = usePlatformStore();
+
+  // Opening the applicants list clears "new application" notifications for this gig.
+  const gigApplicationIds = useMemo(() => new Set(applications.filter((application) => application.gig_id === id).map((application) => application.id)), [applications, id]);
+  const unreadNoteKey = notifications
+    .filter((note) => note.type === 'new_application' && !note.read_at && note.application_id && gigApplicationIds.has(note.application_id))
+    .map((note) => note.id)
+    .join(',');
+  useEffect(() => {
+    if (!unreadNoteKey) return;
+    markNotificationsRead(unreadNoteKey.split(',')).catch(() => undefined);
+  }, [markNotificationsRead, unreadNoteKey]);
   const gig = gigs.find((item) => item.id === id);
   const gigApplications = applications.filter((application) => application.gig_id === id);
 

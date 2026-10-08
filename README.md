@@ -9,6 +9,7 @@ A youth gig marketplace for South Africa. Clients post short-term gigs, workers 
 - Three roles (worker, client, admin) with role-based pages
 - Post, browse and manage gigs; apply to gigs; review applicants
 - **Messaging** between a client and a worker, one thread per accepted application, with unread counts and read receipts
+- **Notifications**: a bell in the header plus optional email when someone applies, a decision is made on an application, or a message arrives (see below)
 - Supabase schema with triggers and row-level security (workers see only their own applications, clients only their own gigs)
 - Runs without Supabase on mock data and `localStorage`, so you can try it with zero setup
 - **AI gig-writing assistant** on the Post a gig page (see below)
@@ -28,6 +29,19 @@ npm run dev                  # http://localhost:3000
 1. Create a Supabase project and run the SQL files in `supabase/migrations/` in date order.
 2. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local`.
 3. For password-reset links to work from another device, set `NEXT_PUBLIC_SITE_URL` to an address that device can open, and add `<that address>/reset-password` to your Supabase Auth redirect URLs.
+
+### Email notifications (optional)
+
+In-app notifications work as soon as the migrations are applied: database triggers write a row to `notifications` when someone applies (→ client), an application is accepted or rejected (→ worker), or a message is sent (→ recipient). Emails are sent by the `notify-email` Edge Function through [Resend](https://resend.com):
+
+```bash
+supabase functions deploy notify-email --no-verify-jwt
+supabase secrets set RESEND_API_KEY=re_... EMAIL_FROM="QuickGig SA <hello@yourdomain>" SITE_URL=https://your-site WEBHOOK_SECRET=<long random string>
+```
+
+Then in the dashboard create a **Database Webhook** on `public.notifications` for `INSERT` events that calls the `notify-email` Edge Function, with two HTTP headers: `Authorization: Bearer <service role key>` and `x-webhook-secret: <WEBHOOK_SECRET>`.
+
+Users can switch emails off on their profile page (`users.email_notifications`). Message emails are throttled to one per conversation every 15 minutes, and each notification is emailed at most once (`emailed_at`). Without the function or the webhook nothing breaks; the bell still works. WhatsApp is deliberately not wired up yet (it needs a Meta Business account and template approval); the function is the one place to add it.
 
 ## AI gig-writing assistant
 
@@ -73,12 +87,13 @@ The database rules in `supabase/migrations/` enforce access, not just the UI:
 - Reviews are limited to the two people on an accepted application, once each.
 - Messages (`messages` table) can only be read and sent by the gig owner and the worker on an application, and only once it is accepted or completed. Admins can read threads for moderation but not write. Messages are immutable; only the recipient can set `read_at`.
 - An application's gig, worker and message cannot be changed once created (only its status).
+- Notifications are created only by triggers. A user can read their own and mark them read (nothing else can change); the email flag is set by the service role only.
 
 Check these rules locally with no Supabase account (it starts a throwaway Postgres with a stand-in for Supabase's auth):
 
 ```bash
 pip install pgserver psycopg2-binary
-python supabase/tests/rls_security_test.py              # expect 56/56 passing
+python supabase/tests/rls_security_test.py              # expect 68/68 passing
 python supabase/tests/rls_security_test.py --baseline   # skips the fixes, so you can see the holes they close
 ```
 

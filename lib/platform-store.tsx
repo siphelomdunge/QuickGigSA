@@ -8,6 +8,7 @@ import {
   type Gig,
   type GigStatus,
   type Message,
+  type Notification,
   type Report,
   type ReportStatus,
   type User,
@@ -17,6 +18,7 @@ import {
   mockClientProfiles,
   mockGigs,
   mockMessages,
+  mockNotifications,
   mockReports,
   mockUsers,
   mockWorkerProfiles,
@@ -33,6 +35,7 @@ type WorkerProfileRow = Database['public']['Tables']['worker_profiles']['Row'];
 type ClientProfileRow = Database['public']['Tables']['client_profiles']['Row'];
 type ReportRow = Database['public']['Tables']['reports']['Row'];
 type MessageRow = Database['public']['Tables']['messages']['Row'];
+type NotificationRow = Database['public']['Tables']['notifications']['Row'];
 // public.public_profiles is a DB view (see 20260528000000 migration) exposing only
 // non-sensitive columns of `users` to every authenticated user.
 type PublicProfileRow = Database['public']['Views']['public_profiles']['Row'];
@@ -45,6 +48,8 @@ interface PlatformStoreValue {
   applications: Application[];
   reports: Report[];
   messages: Message[];
+  notifications: Notification[];
+  emailNotifications: boolean;
   loading: boolean;
   isSupabaseConnected: boolean;
   createGig: (data: CreateGigInput) => Promise<Gig>;
@@ -52,6 +57,8 @@ interface PlatformStoreValue {
   createReport: (data: CreateReportInput) => Promise<Report>;
   sendMessage: (data: { application_id: string; sender_id: string; body: string }) => Promise<Message>;
   markThreadRead: (application_id: string, reader_id: string) => Promise<void>;
+  markNotificationsRead: (ids: string[]) => Promise<void>;
+  setEmailNotifications: (userId: string, enabled: boolean) => Promise<void>;
   updateApplicationStatus: (id: string, status: ApplicationStatus) => Promise<void>;
   updateGigStatus: (id: string, status: GigStatus) => Promise<void>;
   updateVerificationStatus: (profileType: 'worker' | 'client', profileId: string, status: VerificationStatus) => Promise<void>;
@@ -196,7 +203,13 @@ function getInitialState() {
     applications: mockApplications,
     reports: mockReports,
     messages: mockMessages,
+    notifications: mockNotifications,
   };
+}
+
+/** Demo-mode stand-in for the database triggers in 20260601000000_notifications.sql. */
+function demoNotification(input: Omit<Notification, 'id' | 'read_at' | 'created_at'>): Notification {
+  return { ...input, id: `note_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, read_at: null, created_at: new Date().toISOString() };
 }
 
 export function PlatformStoreProvider({ children }: { children: React.ReactNode }) {
@@ -207,6 +220,8 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
   const [applications, setApplications] = useState<Application[]>(mockApplications);
   const [reports, setReports] = useState<Report[]>(mockReports);
   const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [emailNotifications, setEmailNotificationsState] = useState(true);
   const [loading, setLoading] = useState(true);
   const isSupabaseConnected = Boolean(supabase);
 
@@ -214,7 +229,7 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     if (!supabase) return;
 
     setLoading(true);
-    const [publicProfilesResult, ownUsersResult, workerProfilesResult, clientProfilesResult, gigsResult, applicationsResult, reportsResult, addressesResult, messagesResult] = await Promise.all([
+    const [publicProfilesResult, ownUsersResult, workerProfilesResult, clientProfilesResult, gigsResult, applicationsResult, reportsResult, addressesResult, messagesResult, notificationsResult] = await Promise.all([
       // Safe for everyone: names/locations only, no email or phone (see public_profiles view).
       supabase.from('public_profiles').select('*').order('created_at', { ascending: false }).limit(1000),
       // RLS-restricted: returns only the caller's own row, or every row for admins.
@@ -228,9 +243,11 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
       supabase.from('gig_private_details').select('*').limit(1000),
       // RLS: only threads the caller is a party to (or all, for admins).
       supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(5000),
+      // RLS: only the caller's own notifications.
+      supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(200),
     ]);
 
-    const firstError = publicProfilesResult.error ?? ownUsersResult.error ?? workerProfilesResult.error ?? clientProfilesResult.error ?? gigsResult.error ?? applicationsResult.error ?? reportsResult.error ?? addressesResult.error ?? messagesResult.error;
+    const firstError = publicProfilesResult.error ?? ownUsersResult.error ?? workerProfilesResult.error ?? clientProfilesResult.error ?? gigsResult.error ?? applicationsResult.error ?? reportsResult.error ?? addressesResult.error ?? messagesResult.error ?? notificationsResult.error;
     if (firstError) {
       setLoading(false);
       throw firstError;
@@ -262,6 +279,11 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     setApplications(mappedApplications);
     setReports(mappedReports);
     setMessages((messagesResult.data ?? []) as MessageRow[]);
+    setNotifications(((notificationsResult.data ?? []) as NotificationRow[]).map(({ emailed_at: _emailed, ...row }) => row));
+    // `users` is RLS-restricted to the caller's own row (admins see all; theirs is matched by auth id below).
+    const { data: authData } = await supabase.auth.getUser();
+    const me = ownUserRows.find((row) => row.id === authData.user?.id);
+    if (me && typeof me.email_notifications === 'boolean') setEmailNotificationsState(me.email_notifications);
     setLoading(false);
   }, []);
 
@@ -287,11 +309,13 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
         stored = null;
       }
       if (stored) {
-        const parsed = JSON.parse(stored) as { gigs?: Gig[]; applications?: Application[]; reports?: Report[]; messages?: Message[] };
+        const parsed = JSON.parse(stored) as { gigs?: Gig[]; applications?: Application[]; reports?: Report[]; messages?: Message[]; notifications?: Notification[]; emailNotifications?: boolean };
         setGigs(parsed.gigs?.length ? parsed.gigs : mockGigs);
         setApplications(parsed.applications?.length ? parsed.applications : mockApplications);
         setReports(parsed.reports?.length ? parsed.reports : mockReports);
         setMessages(parsed.messages ?? mockMessages);
+        setNotifications(parsed.notifications ?? mockNotifications);
+        if (typeof parsed.emailNotifications === 'boolean') setEmailNotificationsState(parsed.emailNotifications);
       }
     } finally {
       setLoading(false);
@@ -301,13 +325,13 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
   useEffect(() => {
     if (!supabase && !loading) {
       try {
-        window.localStorage.setItem(STORE_KEY, JSON.stringify({ gigs, applications, reports, messages }));
+        window.localStorage.setItem(STORE_KEY, JSON.stringify({ gigs, applications, reports, messages, notifications, emailNotifications }));
       } catch (error) {
         // Safari private mode / storage full: keep working in memory for this session.
         console.warn('[store] Could not persist demo data:', error);
       }
     }
-  }, [applications, gigs, loading, messages, reports]);
+  }, [applications, emailNotifications, gigs, loading, messages, notifications, reports]);
 
   const createGig = useCallback(
     async (data: CreateGigInput) => {
@@ -402,6 +426,19 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
       };
 
       setApplications((current) => [application, ...current]);
+      if (gig) {
+        setNotifications((current) => [
+          demoNotification({
+            user_id: gig.client_id,
+            type: 'new_application',
+            title: `New applicant: ${worker_name}`,
+            body: `${worker_name} applied to "${gig.title}".`,
+            link: `/client/gigs/${gig.id}/applications`,
+            application_id: application.id,
+          }),
+          ...current,
+        ]);
+      }
       return application;
     },
     [gigs, users],
@@ -418,7 +455,34 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
         application.id === id ? { ...application, status, updated_at: new Date().toISOString() } : application,
       ),
     );
-  }, []);
+
+    if (!supabase && (status === 'accepted' || status === 'rejected')) {
+      const application = applications.find((item) => item.id === id);
+      const gig = application ? gigs.find((item) => item.id === application.gig_id) : undefined;
+      if (application && gig) {
+        setNotifications((current) => [
+          status === 'accepted'
+            ? demoNotification({
+                user_id: application.worker_id,
+                type: 'application_accepted',
+                title: `You got the gig: ${gig.title}`,
+                body: `${gig.client_name} accepted your application. Say hello and confirm the details.`,
+                link: `/messages/${application.id}`,
+                application_id: application.id,
+              })
+            : demoNotification({
+                user_id: application.worker_id,
+                type: 'application_rejected',
+                title: `Update on ${gig.title}`,
+                body: 'The client went with someone else this time. More gigs are posted every week.',
+                link: '/browse',
+                application_id: application.id,
+              }),
+          ...current,
+        ]);
+      }
+    }
+  }, [applications, gigs]);
 
   const createReport = useCallback(async (data: CreateReportInput) => {
     if (supabase) {
@@ -545,6 +609,21 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
         read_at: null,
       };
       setMessages((current) => [...current, message]);
+      const recipient = sender_id === application.worker_id ? gig?.client_id : application.worker_id;
+      const senderName = sender_id === application.worker_id ? application.worker_name : gig?.client_name ?? 'QuickGig user';
+      if (recipient) {
+        setNotifications((current) => [
+          demoNotification({
+            user_id: recipient,
+            type: 'new_message',
+            title: `Message from ${senderName}`,
+            body: trimmed.length > 140 ? `${trimmed.slice(0, 140)}…` : trimmed,
+            link: `/messages/${application_id}`,
+            application_id,
+          }),
+          ...current,
+        ]);
+      }
       return message;
     },
     [applications, gigs],
@@ -566,6 +645,24 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     [messages],
   );
 
+  const markNotificationsRead = useCallback(async (ids: string[]) => {
+    if (!ids.length) return;
+    const now = new Date().toISOString();
+    if (supabase) {
+      const { error } = await supabase.from('notifications').update({ read_at: now }).in('id', ids);
+      if (error) throw error;
+    }
+    setNotifications((current) => current.map((note) => (ids.includes(note.id) && !note.read_at ? { ...note, read_at: now } : note)));
+  }, []);
+
+  const setEmailNotifications = useCallback(async (userId: string, enabled: boolean) => {
+    if (supabase) {
+      const { error } = await supabase.from('users').update({ email_notifications: enabled }).eq('id', userId);
+      if (error) throw error;
+    }
+    setEmailNotificationsState(enabled);
+  }, []);
+
   const resetDemoData = useCallback(() => {
     if (supabase) {
       loadSupabaseData().catch(() => undefined);
@@ -580,6 +677,8 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     setApplications(initialState.applications);
     setReports(initialState.reports);
     setMessages(initialState.messages);
+    setNotifications(initialState.notifications);
+    setEmailNotificationsState(true);
     try {
       window.localStorage.removeItem(STORE_KEY);
     } catch {
@@ -596,6 +695,8 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
       applications,
       reports,
       messages,
+      notifications,
+      emailNotifications,
       loading,
       isSupabaseConnected,
       createGig,
@@ -603,6 +704,8 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
       createReport,
       sendMessage,
       markThreadRead,
+      markNotificationsRead,
+      setEmailNotifications,
       updateApplicationStatus,
       updateGigStatus,
       updateVerificationStatus,
@@ -615,8 +718,12 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
       applications,
       applyToGig,
       messages,
+      notifications,
+      emailNotifications,
       sendMessage,
       markThreadRead,
+      markNotificationsRead,
+      setEmailNotifications,
       clientProfiles,
       createGig,
       createReport,

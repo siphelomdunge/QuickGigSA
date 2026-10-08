@@ -7,7 +7,7 @@ const config = [
     // keep it visible as a warning and refactor to a data-fetching library later.
     rules: { 'react-hooks/set-state-in-effect': 'warn' },
   },
-  { ignores: ['.next/**', 'node_modules/**', 'next-env.d.ts'] },
+  { ignores: ['.next/**', 'node_modules/**', 'next-env.d.ts', 'supabase/functions/**'] },
 ];
 
 export default config;

@@ -26,9 +26,12 @@ import GigPage from '@/app/gigs/[id]/page';
 import ClientGigApplicationsPage from '@/app/client/gigs/[id]/applications/page';
 import WorkerApplicationsPage from '@/app/worker/applications/page';
 import WorkerProfilePage from '@/app/worker/profile/page';
+import ClientProfilePage from '@/app/client/profile/page';
 import MessagesPage from '@/app/messages/page';
 import ThreadPage from '@/app/messages/[applicationId]/page';
 import { SiteNav } from '@/components/site-nav';
+import { NotificationBell } from '@/components/notification-bell';
+import NotificationsPage from '@/app/notifications/page';
 import { useAuth } from '@/lib/auth';
 import { usePlatformStore } from '@/lib/platform-store';
 
@@ -286,6 +289,104 @@ describe('demo mode: messaging', () => {
     renderWithProviders(<ThreadPage params={threadParams('app_2')} />);
     expect(await screen.findByText('Conversation not available')).toBeInTheDocument();
     expect(screen.queryByText(/back entrance on Long Street/)).not.toBeInTheDocument();
+  });
+});
+
+describe('demo mode: notifications', () => {
+  function threadParams(applicationId: string): Promise<{ applicationId: string }> {
+    const promise = Promise.resolve({ applicationId }) as Promise<{ applicationId: string }> & { status?: string; value?: unknown };
+    promise.status = 'fulfilled';
+    promise.value = { applicationId };
+    return promise;
+  }
+
+  it('apply → client bell; accept → worker bell; message → recipient bell; opening the page clears them', async () => {
+    const user = userEvent.setup();
+
+    // Seeded: Nandi already has 2 unread (note_1 new applicant, note_3 message).
+    await loginAs('nandi@example.com');
+    let view = renderWithProviders(<NotificationBell />);
+    expect(await screen.findByLabelText('Notifications, 2 unread')).toBeInTheDocument();
+    view.unmount();
+
+    // Thandi (user_4) applies to gig_2 (Nandi's) → Nandi gets a third notification.
+    await loginAs('thandi@example.com');
+    view = renderWithProviders(<GigPage params={params('gig_2')} />);
+    await user.click(await screen.findByRole('button', { name: 'Apply for this Gig' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Why are you a good fit for this gig?'), 'Keen and available.');
+    await user.click(within(dialog).getByRole('button', { name: 'Submit Application' }));
+    await screen.findByText('Application submitted successfully.');
+    view.unmount();
+
+    await loginAs('nandi@example.com');
+    view = renderWithProviders(<NotificationBell />);
+    expect(await screen.findByLabelText('Notifications, 3 unread')).toBeInTheDocument();
+    await user.click(screen.getByLabelText('Notifications, 3 unread'));
+    const panel = await screen.findByRole('dialog', { name: 'Notifications' });
+    expect(within(panel).getAllByText('New applicant: Thandi Jacobs')).toHaveLength(2); // seeded app_1 + the new one
+    view.unmount();
+
+    // Opening the applicants page for gig_2 clears that "new applicant" note; accepting notifies Thandi.
+    view = renderWithProviders(
+      <>
+        <NotificationBell />
+        <ClientGigApplicationsPage params={params('gig_2')} />
+      </>,
+    );
+    const card = (await screen.findByText('Thandi Jacobs')).closest('article')!;
+    expect(await screen.findByLabelText('Notifications, 2 unread')).toBeInTheDocument();
+    await user.click(within(card).getByRole('button', { name: /accept/i }));
+    await within(card).findByRole('link', { name: /message worker/i });
+    view.unmount();
+
+    await loginAs('thandi@example.com');
+    view = renderWithProviders(<NotificationsPage />);
+    expect(await screen.findByText(/You got the gig:/)).toBeInTheDocument();
+    view.unmount();
+
+    // Thandi messages Nandi → Nandi's bell goes back up; opening the thread clears it.
+    const appId = (JSON.parse(window.localStorage.getItem(STORE_KEY)!).applications as { id: string; gig_id: string; worker_id: string }[]).find(
+      (a) => a.gig_id === 'gig_2' && a.worker_id === 'user_4',
+    )!.id;
+    view = renderWithProviders(<ThreadPage params={threadParams(appId)} />);
+    await user.type(await screen.findByLabelText('Message'), 'Thank you! What time?{Enter}');
+    await within(screen.getByRole('log')).findByText('Thank you! What time?');
+    view.unmount();
+
+    await loginAs('nandi@example.com');
+    view = renderWithProviders(<NotificationBell />);
+    expect(await screen.findByLabelText('Notifications, 3 unread')).toBeInTheDocument();
+    view.unmount();
+    renderWithProviders(
+      <>
+        <NotificationBell />
+        <ThreadPage params={threadParams(appId)} />
+      </>,
+    );
+    await within(await screen.findByRole('log')).findByText('Thank you! What time?');
+    expect(await screen.findByLabelText('Notifications, 2 unread')).toBeInTheDocument();
+  });
+
+  it('"mark all read" clears the badge and the email toggle persists', async () => {
+    const user = userEvent.setup();
+    await loginAs('nandi@example.com');
+    const view = renderWithProviders(
+      <>
+        <NotificationBell />
+        <NotificationsPage />
+      </>,
+    );
+    await user.click(await screen.findByRole('button', { name: /mark all 2 read/i }));
+    expect(await screen.findByLabelText('Notifications')).toBeInTheDocument();
+    view.unmount();
+
+    renderWithProviders(<ClientProfilePage />);
+    const toggle = await screen.findByRole('switch', { name: 'Email notifications' });
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
+    await user.click(toggle);
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'false'));
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(STORE_KEY)!).emailNotifications).toBe(false));
   });
 });
 

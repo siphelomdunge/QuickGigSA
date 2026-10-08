@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/lib/auth';
+import { EmailPreference } from '@/components/email-preference';
 import type { WorkerProfile } from '@/lib/mock-data';
 import { usePlatformStore } from '@/lib/platform-store';
 
@@ -44,6 +45,8 @@ export default function WorkerProfilePage() {
         ) : (
           <EmptyState title="Profile not ready yet" description="Sign up as a worker to create a worker profile." />
         )}
+
+        <EmailPreference />
       </div>
     </AuthGate>
   );

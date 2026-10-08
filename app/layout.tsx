@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Zap } from 'lucide-react';
 import { Providers } from './providers';
 import { SiteNav } from '@/components/site-nav';
+import { NotificationBell } from '@/components/notification-bell';
 import { DemoModeBanner } from '@/components/demo-mode-banner';
 
 export const metadata: Metadata = {
@@ -40,7 +41,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                     QuickGig <span className="text-gradient">SA</span>
                   </span>
                 </Link>
-                <SiteNav />
+                <div className="flex items-center gap-2">
+                  <NotificationBell />
+                  <SiteNav />
+                </div>
               </div>
             </header>
 

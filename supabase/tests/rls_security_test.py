@@ -260,6 +260,50 @@ if not BASELINE:
     r = attempt(worker1, ("delete from public.messages where id = %s", (str(msg),)))
     check("Messages cannot be deleted by users", blocked(r) or r == 0)
 
+# ---- 8. notifications -------------------------------------------------------------------------
+if not BASELINE:
+    def notes(user, where="", params=()):
+        return attempt(user, ("select type::text, user_id::text from public.notifications " + where, params))
+
+    # The accepted worker's message earlier created a new_message notification for the client, and
+    # worker3's application in section 6 was rolled back, so create a fresh one here for a clean check.
+    fresh_gig = uuid.uuid4()
+    admin("""insert into public.gigs (id, client_id, title, description, category, location_area, date, start_time, end_time, pay_amount)
+             values (%s, %s, 'Paint', 'Paint a wall', 'Home', 'Langa', '2026-12-05', '09:00', '12:00', 300)""", (str(fresh_gig), str(client2)))
+    admin("insert into public.applications (gig_id, worker_id, message) values (%s, %s, 'me please')", (str(fresh_gig), str(worker3)))
+    fresh_app = admin("select id from public.applications where gig_id = %s", (str(fresh_gig),))[0][0]
+
+    r = notes(client2, "where application_id = %s", (str(fresh_app),))
+    check("Applying notifies the gig owner", not blocked(r) and r == [("new_application", str(client2))], str(r))
+    check("The applicant cannot see the owner's notification", notes(worker3, "where application_id = %s", (str(fresh_app),)) == [])
+
+    admin("update public.applications set status = 'accepted' where id = %s", (str(fresh_app),))
+    r = notes(worker3, "where application_id = %s", (str(fresh_app),))
+    check("Acceptance notifies the worker", not blocked(r) and r == [("application_accepted", str(worker3))], str(r))
+
+    admin("insert into public.messages (application_id, sender_id, body) values (%s, %s, 'see you at 9')", (str(fresh_app), str(worker3)))
+    r = notes(client2, "where application_id = %s and type = 'new_message'", (str(fresh_app),))
+    check("A message notifies the recipient, not the sender", not blocked(r) and r == [("new_message", str(client2))]
+          and notes(worker3, "where application_id = %s and type = 'new_message'", (str(fresh_app),)) == [], str(r))
+
+    check("Users cannot read other people's notifications", notes(worker1, "where user_id = %s", (str(client2),)) == [])
+    r = attempt(worker1, ("insert into public.notifications (user_id, type, title, body, link) values (%s, 'new_message', 'x', 'y', '/')", (str(client2),)))
+    check("Users cannot forge notifications", blocked(r))
+    note_id = admin("select id from public.notifications where user_id = %s and type = 'new_message' limit 1", (str(client2),))[0][0]
+    r = attempt(client2, ("update public.notifications set read_at = now() where id = %s", (str(note_id),)))
+    check("Owner can mark a notification read", not blocked(r) and r == 1, str(r))
+    r = attempt(client2, ("update public.notifications set title = 'hacked' where id = %s", (str(note_id),)))
+    check("Owner cannot edit notification content", blocked(r))
+    r = attempt(client2, ("update public.notifications set emailed_at = now() where id = %s", (str(note_id),)))
+    check("Owner cannot fake the email-sent marker", blocked(r))
+    r = attempt(worker3, ("update public.notifications set read_at = now() where id = %s", (str(note_id),)))
+    check("Someone else cannot mark it read", blocked(r) or r == 0)
+    r = attempt(client2, ("delete from public.notifications where id = %s", (str(note_id),)))
+    check("Notifications cannot be deleted by users", blocked(r) or r == 0)
+    r = attempt(client2, ("update public.users set email_notifications = false where id = %s", (str(client2),)),
+                "select email_notifications from public.users where id = '%s'" % client2)
+    check("A user can switch off email notifications", not blocked(r) and r[0][0] is False, str(r))
+
 # ---- report -----------------------------------------------------------------------------------
 width = max(len(n) for n, _, _ in results)
 print("\nMODE:", "BASELINE (without security fixes)" if BASELINE else "WITH security fixes")

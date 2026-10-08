@@ -19,7 +19,7 @@ const MAX_LENGTH = 2000;
 export default function ThreadPage({ params }: { params: Promise<{ applicationId: string }> }) {
   const { applicationId } = use(params);
   const { user } = useAuth();
-  const { applications, gigs, users, messages, sendMessage, markThreadRead } = usePlatformStore();
+  const { applications, gigs, users, messages, notifications, sendMessage, markThreadRead, markNotificationsRead } = usePlatformStore();
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
@@ -36,6 +36,17 @@ export default function ThreadPage({ params }: { params: Promise<{ applicationId
     if (!user || !unreadIncoming) return;
     markThreadRead(applicationId, user.id).catch(() => undefined);
   }, [applicationId, markThreadRead, unreadIncoming, user]);
+
+  // Clear message notifications for this thread too.
+  const unreadNoteIds = useMemo(
+    () => (user ? notifications.filter((note) => note.user_id === user.id && note.type === 'new_message' && note.application_id === applicationId && !note.read_at).map((note) => note.id) : []),
+    [applicationId, notifications, user],
+  );
+  const unreadNoteKey = unreadNoteIds.join(',');
+  useEffect(() => {
+    if (!unreadNoteKey) return;
+    markNotificationsRead(unreadNoteKey.split(',')).catch(() => undefined);
+  }, [markNotificationsRead, unreadNoteKey]);
 
   // Keep the newest message in view.
   useEffect(() => {
