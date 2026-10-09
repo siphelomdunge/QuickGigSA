@@ -58,16 +58,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               {children}
             </main>
 
-            <footer className="mt-16 rounded-3xl border border-slate-200/80 bg-white/70 p-6 text-sm text-slate-600 shadow-soft backdrop-blur-xl sm:p-8">
-              <div className="grid gap-8 md:grid-cols-[1.4fr_1fr_1fr]">
-                <div className="max-w-md space-y-3">
+            <footer className="mt-10 rounded-3xl border border-slate-200/80 bg-white/70 p-5 text-sm text-slate-600 shadow-soft backdrop-blur-xl sm:mt-16 sm:p-8">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:gap-8 md:grid-cols-[1.4fr_1fr_1fr]">
+                <div className="col-span-2 max-w-md space-y-2 md:col-span-1 md:space-y-3">
                   <p className="inline-flex items-center gap-2 font-display text-base font-semibold text-slate-900">
                     <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-white">
                       <Zap className="h-3.5 w-3.5 fill-white" />
                     </span>
                     QuickGig SA
                   </p>
-                  <p className="leading-6">
+                  <p className="text-xs leading-5 sm:text-sm sm:leading-6">
                     Connecting South African youth with short-term local work. Workers are independent, not employees of QuickGig SA; clients and workers agree
                     directly on scope, payment and terms.
                   </p>
@@ -75,20 +75,20 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Explore</p>
                   <ul className="mt-1 font-medium text-slate-700">
-                    <li><Link href="/browse" className="inline-flex min-h-11 items-center hover:text-primary">Browse gigs</Link></li>
-                    <li><Link href="/register" className="inline-flex min-h-11 items-center hover:text-primary">Join as a worker</Link></li>
-                    <li><Link href="/client/post-gig" className="inline-flex min-h-11 items-center hover:text-primary">Post a gig</Link></li>
+                    <li><Link href="/browse" className="inline-flex min-h-10 items-center hover:text-primary sm:min-h-11">Browse gigs</Link></li>
+                    <li><Link href="/register" className="inline-flex min-h-10 items-center hover:text-primary sm:min-h-11">Join as a worker</Link></li>
+                    <li><Link href="/client/post-gig" className="inline-flex min-h-10 items-center hover:text-primary sm:min-h-11">Post a gig</Link></li>
                   </ul>
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Legal</p>
                   <ul className="mt-1 font-medium text-slate-700">
-                    <li><Link href="/terms" className="inline-flex min-h-11 items-center hover:text-primary">Terms of Use</Link></li>
-                    <li><Link href="/privacy" className="inline-flex min-h-11 items-center hover:text-primary">Privacy Policy</Link></li>
+                    <li><Link href="/terms" className="inline-flex min-h-10 items-center hover:text-primary sm:min-h-11">Terms of Use</Link></li>
+                    <li><Link href="/privacy" className="inline-flex min-h-10 items-center hover:text-primary sm:min-h-11">Privacy Policy</Link></li>
                   </ul>
                 </div>
               </div>
-              <div className="mt-8 flex flex-col gap-2 border-t border-slate-200/80 pt-5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-6 flex flex-col gap-1 border-t border-slate-200/80 pt-4 text-xs text-slate-500 sm:mt-8 sm:flex-row sm:items-center sm:justify-between sm:pt-5">
                 <p>© {new Date().getFullYear()} QuickGig SA. QuickGig SA does not guarantee jobs or payment.</p>
                 <p>Made in Mzansi 🇿🇦</p>
               </div>
