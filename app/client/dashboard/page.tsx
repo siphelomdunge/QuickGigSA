@@ -36,10 +36,10 @@ export default function ClientDashboardPage() {
               Post a gig
             </Link>
           </div>
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
             <StatCard label="Active gigs" value={openGigs.length} icon={ClipboardList} tone="green" />
             <StatCard label="Applicants" value={applicantCount} icon={Users} tone="orange" />
-            <StatCard label="Posted value" value={formatRand(totalPostedValue)} icon={Wallet} tone="blue" hint="pay × workers needed" />
+            <StatCard label="Posted value" value={formatRand(totalPostedValue)} icon={Wallet} tone="blue" hint="pay × workers needed" className="col-span-2 sm:col-span-1" />
           </div>
         </section>
 

@@ -51,7 +51,7 @@ describe('formatRelative', () => {
     ['2026-06-02T11:45:00', '15 min'],
     ['2026-06-02T09:05:00', '09:05'],
     ['2026-06-01T20:30:00', 'Yesterday 20:30'],
-    ['2026-05-20T08:00:00', '20 May'],
+    ['2026-05-20T08:00:00', '2026-05-20'],
   ])('%s → %s', (iso, expected) => {
     expect(formatRelative(new Date(iso).toISOString(), now)).toBe(expected);
   });

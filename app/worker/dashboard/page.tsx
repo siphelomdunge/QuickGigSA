@@ -35,14 +35,14 @@ export default function WorkerDashboardPage() {
                 {openGigs.length ? `${openGigs.length} open gig${openGigs.length === 1 ? '' : 's'} waiting for applicants right now.` : 'No open gigs right now. Check back soon.'}
               </p>
             </div>
-            <Link href="/browse" className="inline-flex items-center justify-center rounded-full bg-gradient-to-b from-primary-500 to-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-glow-blue ring-1 ring-inset ring-white/20 transition hover:shadow-lift">
+            <Link href="/browse" className="inline-flex items-center justify-center rounded-full bg-gradient-to-b from-secondary-500 to-secondary-600 px-5 py-3 text-sm font-semibold text-white shadow-glow-orange ring-1 ring-inset ring-white/20 transition hover:shadow-lift">
               Browse gigs
             </Link>
           </div>
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
             <StatCard label="Open gigs" value={openGigs.length} icon={Briefcase} tone="green" />
             <StatCard label="Your applications" value={workerApplications.length} icon={Clock3} tone="orange" />
-            <StatCard label="Accepted" value={accepted} icon={CheckCircle2} tone="blue" />
+            <StatCard label="Accepted" value={accepted} icon={CheckCircle2} tone="blue" className="col-span-2 sm:col-span-1" />
           </div>
         </section>
 

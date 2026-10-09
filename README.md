@@ -11,6 +11,7 @@ A youth gig marketplace for South Africa. Clients post short-term gigs, workers 
 - **Messaging** between a client and a worker, one thread per accepted application, with unread counts and read receipts
 - **Dark mode** (follows the system setting; toggle in the header)
 - **Ratings & reviews**: once a gig is marked completed, the client and worker can rate each other (1–5 stars + comment, once per gig). Averages show on profiles, applicant cards and gig pages; the reviewed person is notified
+- **Post gig in three steps** — Details → When & where → Pay & requirements, with per-step validation; the same form powers editing.
 - **Edit gigs after posting** — clients can change the plan from *Manage gigs*; pending/accepted applicants get a `gig_updated` notification when the date, time, area, pay or title changes (and accepted workers when the private address changes). Completed/cancelled gigs are frozen by a DB trigger.
 - **Profile strength** meter for workers (bio, skills, experience, categories, location, verification) on the dashboard and profile; clients see the percentage on applicant cards
 - **Notifications**: a bell in the header plus optional email when someone applies, a decision is made on an application, or a message arrives (see below)

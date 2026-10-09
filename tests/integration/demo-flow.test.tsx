@@ -145,14 +145,21 @@ describe('demo mode: gig lifecycle', () => {
     await loginAs('nandi@example.com');
     let view = renderWithProviders(<PostGigPage />);
     await screen.findByRole('heading', { name: 'Post a new gig' });
+    // Step 1 — details. "Next" refuses to move on while required fields are empty.
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.queryByRole('button', { name: 'Post gig' })).not.toBeInTheDocument();
     await user.type(screen.getByLabelText('Gig title'), 'Integration test gig');
+    await user.type(screen.getByLabelText('Description'), 'Help pack boxes for a market stall.');
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    // Step 2 — when & where.
     await user.type(screen.getByLabelText('Public location area'), 'Observatory, Cape Town');
     await user.type(screen.getByLabelText('Private address'), '12 Secret Lane');
     await user.type(screen.getByLabelText('Date'), '2026-12-01');
     await user.type(screen.getByLabelText('Start time'), '09:00');
     await user.type(screen.getByLabelText('End time'), '13:00');
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    // Step 3 — pay & requirements.
     await user.type(screen.getByLabelText('Pay amount (ZAR)'), '350');
-    await user.type(screen.getByLabelText('Description'), 'Help pack boxes for a market stall.');
     await user.type(screen.getByLabelText('Requirements'), 'Comfortable shoes.');
     await user.click(screen.getByRole('button', { name: 'Post gig' }));
 
@@ -463,10 +470,12 @@ describe('demo mode: editing a gig', () => {
 
     await loginAs('nandi@example.com');
     let view = renderWithProviders(<EditGigPage params={params('gig_2')} />);
-    await screen.findByRole('button', { name: 'Save changes' });
+    // Editing: every step is reachable straight away.
+    await user.click(await screen.findByRole('button', { name: /When & where/ }));
     const start = screen.getByLabelText('Start time') as HTMLInputElement;
     await user.clear(start);
     await user.type(start, '10:30');
+    await user.click(screen.getByRole('button', { name: 'Next' }));
     await user.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(() => expect(router.push).toHaveBeenCalledWith('/client/gigs/gig_2/applications'));
     const persisted = JSON.parse(window.localStorage.getItem(STORE_KEY)!);

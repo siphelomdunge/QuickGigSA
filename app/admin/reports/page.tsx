@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { usePlatformStore } from '@/lib/platform-store';
+import { toIsoDate } from '@/lib/format';
 
 export default function AdminReportsPage() {
   const { reports, users, gigs, updateReportStatus } = usePlatformStore();
@@ -49,7 +50,7 @@ export default function AdminReportsPage() {
                           Gig: {gig?.title ?? 'N/A'}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500">Submitted {new Date(report.created_at).toLocaleDateString()}</p>
+                      <p className="text-xs text-slate-500">Submitted {toIsoDate(report.created_at)}</p>
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
                       <Button variant="outline" onClick={() => updateReportStatus(report.id, 'investigating')} disabled={report.status === 'investigating'}>

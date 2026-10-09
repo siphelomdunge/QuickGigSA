@@ -168,7 +168,7 @@ export default function ThreadPage({ params }: { params: Promise<{ applicationId
                             <div
                               className={cn(
                                 'max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-6 shadow-sm sm:max-w-[70%]',
-                                mine ? 'rounded-br-md bg-gradient-to-b from-primary-500 to-primary-600 text-white' : 'rounded-bl-md border border-slate-200 bg-white text-slate-800',
+                                mine ? 'rounded-br-md bg-gradient-to-b from-secondary-500 to-secondary-600 text-white' : 'rounded-bl-md border border-slate-200 bg-white text-slate-800',
                               )}
                             >
                               <p className="whitespace-pre-wrap break-words">{message.body}</p>

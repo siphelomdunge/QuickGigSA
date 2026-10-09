@@ -5,6 +5,7 @@ import { AuthGate } from '@/components/auth-gate';
 import { EmptyState } from '@/components/ui/empty-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { usePlatformStore } from '@/lib/platform-store';
+import { toIsoDate } from '@/lib/format';
 
 export default function AdminUsersPage() {
   const { users, workerProfiles, clientProfiles } = usePlatformStore();
@@ -48,7 +49,7 @@ export default function AdminUsersPage() {
                         </span>
                       </div>
                     </div>
-                    <p className="text-xs text-slate-500">Joined {new Date(user.created_at).toLocaleDateString()}</p>
+                    <p className="text-xs text-slate-500">Joined {toIsoDate(user.created_at)}</p>
                   </div>
                 </article>
               );

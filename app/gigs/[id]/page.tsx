@@ -44,7 +44,7 @@ export default function GigPage({ params }: GigPageProps) {
         title="Gig not found"
         description="This gig may have been removed or cancelled. Return to browsing to find available work."
         action={
-          <Link href="/browse" className="rounded-full bg-gradient-to-b from-primary-500 to-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-glow-blue ring-1 ring-inset ring-white/20 transition hover:shadow-lift">
+          <Link href="/browse" className="rounded-full bg-gradient-to-b from-secondary-500 to-secondary-600 px-5 py-3 text-sm font-semibold text-white shadow-glow-orange ring-1 ring-inset ring-white/20 transition hover:shadow-lift">
             Browse gigs
           </Link>
         }
@@ -312,7 +312,7 @@ export default function GigPage({ params }: GigPageProps) {
             <Button type="button" variant="outline" onClick={() => setIsReportOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="secondary">
+            <Button type="submit">
               Submit report
             </Button>
           </div>

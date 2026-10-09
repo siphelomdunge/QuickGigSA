@@ -55,7 +55,7 @@ export default function WorkerApplicationsPage() {
                       {application.status === 'accepted' || application.status === 'completed' ? (
                         <Link
                           href={`/messages/${application.id}`}
-                          className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-primary-500 to-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-glow-blue ring-1 ring-inset ring-white/20 transition hover:shadow-lift"
+                          className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-secondary-500 to-secondary-600 px-4 py-2 text-sm font-semibold text-white shadow-glow-orange ring-1 ring-inset ring-white/20 transition hover:shadow-lift"
                         >
                           <MessageSquare className="h-4 w-4" />
                           Message client
@@ -75,7 +75,7 @@ export default function WorkerApplicationsPage() {
               title="No applications yet"
               description="Browse local gigs and submit your first application when you find a good match."
               action={
-                <Link href="/browse" className="rounded-full bg-gradient-to-b from-primary-500 to-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-glow-blue ring-1 ring-inset ring-white/20 transition hover:shadow-lift">
+                <Link href="/browse" className="rounded-full bg-gradient-to-b from-secondary-500 to-secondary-600 px-5 py-3 text-sm font-semibold text-white shadow-glow-orange ring-1 ring-inset ring-white/20 transition hover:shadow-lift">
                   Browse gigs
                 </Link>
               }

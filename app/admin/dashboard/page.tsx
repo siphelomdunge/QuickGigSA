@@ -19,11 +19,11 @@ export default function AdminDashboardPage() {
               <p className="eyebrow">Admin overview</p>
               <h1 className="mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">Platform operations</h1>
             </div>
-            <Link href="/admin/users" className="rounded-full bg-gradient-to-b from-primary-500 to-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-glow-blue ring-1 ring-inset ring-white/20 transition hover:shadow-lift">
+            <Link href="/admin/users" className="rounded-full bg-gradient-to-b from-secondary-500 to-secondary-600 px-5 py-3 text-sm font-semibold text-white shadow-glow-orange ring-1 ring-inset ring-white/20 transition hover:shadow-lift">
               Manage users
             </Link>
           </div>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <StatCard label="Users" value={users.length} icon={Users} tone="blue" />
             <StatCard label="Gigs" value={gigs.length} icon={ShieldCheck} tone="green" />
             <StatCard label="Applications" value={applications.length} icon={FileWarning} tone="slate" />

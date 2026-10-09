@@ -1,4 +1,5 @@
 import type { Application, Gig, Message, User } from '@/lib/mock-data';
+import { formatDateLong, toIsoDate } from '@/lib/format';
 
 export interface Thread {
   application: Application;
@@ -71,7 +72,7 @@ export function formatRelative(iso: string, now = new Date()): string {
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
   if (date.toDateString() === yesterday.toDateString()) return `Yesterday ${time}`;
-  return date.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' });
+  return toIsoDate(date);
 }
 
 /** Group messages by calendar day for separators in the thread view. */
@@ -85,7 +86,7 @@ export function groupByDay(messages: Message[]): { day: string; label: string; m
   const yesterday = new Date(Date.now() - 86_400_000).toDateString();
   return [...groups.entries()].map(([day, items]) => ({
     day,
-    label: day === today ? 'Today' : day === yesterday ? 'Yesterday' : new Date(day).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' }),
+    label: day === today ? 'Today' : day === yesterday ? 'Yesterday' : formatDateLong(toIsoDate(new Date(day))),
     messages: items,
   }));
 }

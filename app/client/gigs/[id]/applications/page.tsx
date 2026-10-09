@@ -118,7 +118,7 @@ export default function ClientGigApplicationsPage({ params }: ApplicationsPagePr
                       {application.status === 'accepted' || application.status === 'completed' ? (
                         <Link
                           href={`/messages/${application.id}`}
-                          className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-primary-500 to-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-glow-blue ring-1 ring-inset ring-white/20 transition hover:shadow-lift"
+                          className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-secondary-500 to-secondary-600 px-5 py-3 text-sm font-semibold text-white shadow-glow-orange ring-1 ring-inset ring-white/20 transition hover:shadow-lift"
                         >
                           <MessageSquare className="h-4 w-4" />
                           Message worker
@@ -126,7 +126,7 @@ export default function ClientGigApplicationsPage({ params }: ApplicationsPagePr
                       ) : null}
                       {application.status === 'pending' ? (
                         <>
-                          <Button variant="secondary" className="gap-2" onClick={() => updateApplicationStatus(application.id, 'accepted')}>
+                          <Button className="gap-2" onClick={() => updateApplicationStatus(application.id, 'accepted')}>
                             <Check className="h-4 w-4" />
                             Accept
                           </Button>

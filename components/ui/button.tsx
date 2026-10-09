@@ -3,10 +3,11 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const variants = {
+  // Primary actions are brand orange so they stand out from the blue chrome; secondary is calm blue.
   default:
-    'bg-gradient-to-b from-primary-500 to-primary-600 text-white shadow-glow-blue hover:from-primary-400 hover:to-primary-600 hover:shadow-lift ring-1 ring-inset ring-white/20',
+    'bg-gradient-to-b from-secondary-500 to-secondary-600 text-white shadow-glow-orange hover:from-orange-400 hover:to-secondary-600 hover:shadow-lift ring-1 ring-inset ring-white/20',
   secondary:
-    'bg-gradient-to-b from-secondary-500 to-secondary-600 text-white shadow-glow-orange hover:from-orange-400 hover:to-secondary-600 ring-1 ring-inset ring-white/20',
+    'bg-gradient-to-b from-primary-500 to-primary-600 text-white shadow-glow-blue hover:from-primary-400 hover:to-primary-600 hover:shadow-lift ring-1 ring-inset ring-white/20',
   outline: 'border border-slate-200 bg-white text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900',
   ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
   danger: 'bg-white text-red-600 border border-red-200 hover:bg-red-50',

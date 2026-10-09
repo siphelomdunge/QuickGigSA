@@ -228,7 +228,7 @@ export default function HomePage() {
             QuickGig SA connects students, freelancers, and local workers with trusted short-term gigs nearby.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row">
-            <Link href="/browse" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-primary-500 to-primary-600 px-7 py-3 text-base font-semibold text-white shadow-glow-blue ring-1 ring-inset ring-white/20 transition hover:-translate-y-0.5 hover:shadow-lift">
+            <Link href="/browse" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-secondary-500 to-secondary-600 px-7 py-3 text-base font-semibold text-white shadow-glow-orange ring-1 ring-inset ring-white/20 transition hover:-translate-y-0.5 hover:shadow-lift">
               Browse gigs
               <ArrowRight className="h-4 w-4" />
             </Link>

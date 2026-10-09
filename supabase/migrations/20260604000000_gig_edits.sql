@@ -51,7 +51,7 @@ declare
   summary text;
   applicant record;
 begin
-  if new.date is distinct from old.date then changes := changes || ('date is now ' || to_char(new.date, 'Dy DD Mon')); end if;
+  if new.date is distinct from old.date then changes := changes || ('date is now ' || to_char(new.date, 'YYYY-MM-DD')); end if;
   if new.start_time is distinct from old.start_time or new.end_time is distinct from old.end_time then
     changes := changes || ('time is now ' || to_char(new.start_time, 'HH24:MI') || '–' || to_char(new.end_time, 'HH24:MI'));
   end if;

@@ -133,7 +133,7 @@ export function SiteNav() {
             </Link>
             <Link
               href="/register"
-              className="rounded-full bg-gradient-to-b from-primary-500 to-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-glow-blue ring-1 ring-inset ring-white/20 transition hover:shadow-lift"
+              className="rounded-full bg-gradient-to-b from-secondary-500 to-secondary-600 px-4 py-2 text-sm font-semibold text-white shadow-glow-orange ring-1 ring-inset ring-white/20 transition hover:shadow-lift"
             >
               Get started
             </Link>

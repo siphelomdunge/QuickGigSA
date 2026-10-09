@@ -108,12 +108,8 @@ const sentence = (s: string) => {
 const splitItems = (s: string) =>
   s.split(/\n|;|•|(?:^|\s)-\s|,\s*/).map((i) => i.trim()).filter(Boolean);
 
-function formatDate(date: string): string {
-  const d = new Date(`${date}T00:00:00`);
-  return Number.isNaN(d.getTime())
-    ? date
-    : d.toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric', month: 'short' });
-}
+// Dates stay in YYYY-MM-DD, the one format used across the app.
+const formatDate = (date: string): string => date;
 
 export function fallbackSuggest(draft: GigDraft): GigSuggestion {
   const rough = sanitize(draft.description, draft.pay_amount);
