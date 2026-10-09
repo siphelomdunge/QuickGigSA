@@ -49,11 +49,11 @@ export function EmailPreference() {
           onClick={toggle}
           disabled={saving}
           className={cn(
-            'relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/25',
+            'relative inline-flex h-8 w-14 shrink-0 items-center rounded-full transition before:absolute before:-inset-2 before:content-[""] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/25',
             emailNotifications ? 'bg-primary' : 'bg-slate-300',
           )}
         >
-          <span className={cn('inline-block h-5 w-5 rounded-full bg-white shadow transition', emailNotifications ? 'translate-x-6' : 'translate-x-1')} />
+          <span className={cn('inline-block h-6 w-6 rounded-full bg-white shadow transition', emailNotifications ? 'translate-x-7' : 'translate-x-1')} />
         </button>
       </div>
     </section>

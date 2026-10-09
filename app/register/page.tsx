@@ -89,12 +89,12 @@ export default function RegisterPage() {
         <Input label="Location" placeholder="Cape Town" value={location} onChange={(event) => setLocation(event.target.value)} />
         <Input label="Password" type="password" autoComplete="new-password" placeholder="Create a strong password" value={password} onChange={(event) => setPassword(event.target.value)} />
         <div className="md:col-span-2 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-700">
-          <label className="flex items-start gap-3">
-            <input type="checkbox" required checked={isAdult} onChange={(event) => setIsAdult(event.target.checked)} className="mt-1 h-4 w-4 rounded border-slate-300 accent-primary" />
+          <label className="flex min-h-11 items-start gap-3 py-1">
+            <input type="checkbox" required checked={isAdult} onChange={(event) => setIsAdult(event.target.checked)} className="mt-0.5 h-5 w-5 rounded border-slate-300 accent-primary" />
             <span>I am 18 years or older.</span>
           </label>
-          <label className="flex items-start gap-3">
-            <input type="checkbox" required checked={agreed} onChange={(event) => setAgreed(event.target.checked)} className="mt-1 h-4 w-4 rounded border-slate-300 accent-primary" />
+          <label className="flex min-h-11 items-start gap-3 py-1">
+            <input type="checkbox" required checked={agreed} onChange={(event) => setAgreed(event.target.checked)} className="mt-0.5 h-5 w-5 rounded border-slate-300 accent-primary" />
             <span>
               I have read and accept the <Link href="/terms" target="_blank" className="font-semibold text-primary underline">Terms of Use</Link> and
               the <Link href="/privacy" target="_blank" className="font-semibold text-primary underline">Privacy Policy</Link>, and I consent to QuickGig SA using my information as described there.

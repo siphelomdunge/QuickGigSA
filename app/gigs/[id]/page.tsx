@@ -150,12 +150,12 @@ export default function GigPage({ params }: GigPageProps) {
         <div className="relative flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-slate-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white">{gig.category}</span>
+              <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white">{gig.category}</span>
               <StatusBadge status={gig.status} />
             </div>
             <h1 className="text-3xl font-semibold text-slate-900 sm:text-4xl lg:text-5xl">{gig.title}</h1>
             <p className="inline-flex items-center gap-2 text-sm text-slate-600">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-[11px] font-bold text-white">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">
                 {gig.client_name.slice(0, 2).toUpperCase()}
               </span>
               Posted by <span className="font-semibold text-slate-900">{gig.client_name}</span>
@@ -180,7 +180,7 @@ export default function GigPage({ params }: GigPageProps) {
                     <Icon className="h-5 w-5" />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{item.label}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{item.label}</p>
                     <p className="truncate font-semibold text-slate-900">{item.value}</p>
                   </div>
                 </div>

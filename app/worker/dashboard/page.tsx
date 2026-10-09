@@ -27,7 +27,7 @@ export default function WorkerDashboardPage() {
             <div>
               <p className="eyebrow">Worker dashboard</p>
               <h1 className="mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">
-                {greeting}, {firstName} 👋
+                {greeting}, <span className="whitespace-nowrap">{firstName} 👋</span>
               </h1>
               <p className="mt-2 text-slate-600">
                 {openGigs.length ? `${openGigs.length} open gig${openGigs.length === 1 ? '' : 's'} waiting for applicants right now.` : 'No open gigs right now. Check back soon.'}

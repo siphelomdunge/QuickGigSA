@@ -90,7 +90,7 @@ function WorkerProfileForm({ profile, onSave }: { profile: WorkerProfile; onSave
             type="checkbox"
             checked={transportAvailable}
             onChange={(event) => setTransportAvailable(event.target.checked)}
-            className="h-4 w-4 rounded border-slate-300 text-primary"
+            className="h-5 w-5 rounded border-slate-300 text-primary"
           />
           Transport available
         </label>

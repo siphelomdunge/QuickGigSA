@@ -136,7 +136,7 @@ function HeroVisual() {
       <div className="absolute inset-8 rounded-[2rem] bg-gradient-to-br from-primary/12 via-white/50 to-accent/12 shadow-glow-blue dark:via-white/5" />
       <div className="absolute inset-x-10 top-16 h-40 skew-y-6 rounded-[2rem] bg-gradient-to-r from-primary/12 via-secondary/10 to-accent/12 blur-xl" />
 
-      <FloatingCard className="absolute left-1 top-8 z-20 w-44 sm:left-0 sm:top-12" rotate="-5deg" delay={200}>
+      <FloatingCard className="absolute left-1 top-8 z-20 hidden w-44 sm:left-0 sm:top-12 sm:block" rotate="-5deg" delay={200}>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Zap className="h-5 w-5" />
@@ -148,7 +148,7 @@ function HeroVisual() {
         </div>
       </FloatingCard>
 
-      <FloatingCard className="absolute right-0 top-24 z-20 w-44 sm:right-4" rotate="4deg" delay={650}>
+      <FloatingCard className="absolute right-0 top-24 z-20 hidden w-44 sm:right-4 sm:block" rotate="4deg" delay={650}>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-green-700">
             <BadgeCheck className="h-5 w-5" />
@@ -163,8 +163,8 @@ function HeroVisual() {
       <div className="absolute left-1/2 top-36 z-10 w-[88%] max-w-sm -translate-x-1/2 rotate-[-2deg] transform-gpu rounded-[2rem] border border-white/80 bg-white/85 p-6 shadow-premium backdrop-blur-xl transition duration-300 hover:-translate-y-2 hover:rotate-0 sm:top-40">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase text-secondary">Featured gig</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-950">Event Assistant</h3>
+            <p className="text-xs font-semibold uppercase text-orange-700">Featured gig</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-950">Event Assistant</p>
           </div>
           <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-green-700">Open</span>
         </div>
@@ -189,7 +189,7 @@ function HeroVisual() {
         </Link>
       </div>
 
-      <FloatingCard className="absolute bottom-16 left-8 z-20 w-40 sm:bottom-20" rotate="3deg" delay={900}>
+      <FloatingCard className="absolute bottom-16 left-8 z-20 hidden w-40 sm:bottom-20 sm:block" rotate="3deg" delay={900}>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary/10 text-secondary">
             <Wallet className="h-5 w-5" />
@@ -214,7 +214,7 @@ function HeroVisual() {
 export default function HomePage() {
   return (
     <div className="relative overflow-hidden pb-8">
-      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[720px] bg-[linear-gradient(120deg,rgba(37,99,235,0.12),rgba(255,255,255,0.28),rgba(34,197,94,0.10))] dark:bg-[linear-gradient(120deg,rgba(37,99,235,0.10),transparent,rgba(34,197,94,0.06))]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[720px] [mask-image:linear-gradient(to_bottom,black_55%,transparent)] bg-[linear-gradient(120deg,rgba(37,99,235,0.12),rgba(255,255,255,0.28),rgba(34,197,94,0.10))] dark:bg-[linear-gradient(120deg,rgba(37,99,235,0.10),transparent,rgba(34,197,94,0.06))]" />
       <div className="pointer-events-none absolute inset-x-0 top-20 -z-10 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
       <section className="grid min-h-[calc(100vh-120px)] gap-10 py-8 lg:grid-cols-[1fr_0.92fr] lg:items-center lg:py-12">
@@ -323,7 +323,7 @@ export default function HomePage() {
                     <p className="text-sm text-white/70">Student worker</p>
                   </div>
                 </div>
-                <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-slate-950">Verified</span>
+                <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-black">Verified</span>
               </div>
               <div className="mt-6 grid gap-3">
                 <div className="rounded-2xl bg-white/10 p-4">

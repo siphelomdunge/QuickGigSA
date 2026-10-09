@@ -35,7 +35,7 @@ export default function MessagesPage() {
           </div>
         </section>
 
-        <section className="panel p-4 sm:p-6">{user ? <ThreadList threads={threads} userId={user.id} /> : null}</section>
+        <section className="panel min-w-0 overflow-hidden p-4 sm:p-6">{user ? <ThreadList threads={threads} userId={user.id} /> : null}</section>
       </div>
     </AuthGate>
   );

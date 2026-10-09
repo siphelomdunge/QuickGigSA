@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell, BellRing, CheckCheck, Inbox, MessageSquare, PartyPopper, UserPlus, XCircle } from 'lucide-react';
 import type { Notification, NotificationType } from '@/lib/mock-data';
 import { formatRelative } from '@/lib/messaging';
@@ -35,7 +36,7 @@ export function NotificationRow({ note, onOpen, compact = false }: { note: Notif
       <span className="min-w-0 flex-1">
         <span className="flex items-start justify-between gap-3">
           <span className={cn('text-sm text-slate-900', note.read_at ? 'font-medium' : 'font-semibold')}>{note.title}</span>
-          <span className="shrink-0 text-[11px] text-slate-400">{formatRelative(note.created_at)}</span>
+          <span className="shrink-0 text-xs text-slate-400">{formatRelative(note.created_at)}</span>
         </span>
         <span className={cn('mt-0.5 block text-sm leading-5 text-slate-600', compact && 'line-clamp-2')}>{note.body}</span>
       </span>
@@ -49,6 +50,24 @@ export function NotificationBell() {
   const { notifications, markNotificationsRead } = usePlatformStore();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  // The panel is rendered at the document root (the blurred header would otherwise clip it on phones)
+  // and anchored to the bell's position; on narrow screens it simply spans the viewport.
+  const [anchor, setAnchor] = useState<{ top: number; right: number } | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const rect = buttonRef.current?.getBoundingClientRect();
+      if (rect) setAnchor({ top: rect.bottom + 8, right: Math.max(16, window.innerWidth - rect.right) });
+    };
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [open]);
 
   const mine = user ? notifications.filter((note) => note.user_id === user.id) : [];
   const unread = mine.filter((note) => !note.read_at);
@@ -57,7 +76,8 @@ export function NotificationBell() {
   useEffect(() => {
     if (!open) return;
     const onDown = (event: MouseEvent) => {
-      if (!panelRef.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (!panelRef.current?.contains(target) && !buttonRef.current?.contains(target)) setOpen(false);
     };
     const onKey = (event: KeyboardEvent) => event.key === 'Escape' && setOpen(false);
     document.addEventListener('mousedown', onDown);
@@ -71,31 +91,39 @@ export function NotificationBell() {
   if (!user) return null;
 
   return (
-    <div className="relative" ref={panelRef}>
+    <>
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-label={unread.length ? `Notifications, ${unread.length} unread` : 'Notifications'}
         aria-expanded={open}
-        className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+        className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
       >
         {unread.length ? <BellRing className="h-[18px] w-[18px]" /> : <Bell className="h-[18px] w-[18px]" />}
         {unread.length ? (
-          <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1 text-[10px] font-bold text-white ring-2 ring-white">
+          <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1 text-xs font-bold text-white ring-2 ring-white">
             {unread.length > 9 ? '9+' : unread.length}
           </span>
         ) : null}
       </button>
 
-      {open ? (
-        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[22rem] max-w-[calc(100vw-2rem)] animate-scale-in rounded-2xl border border-slate-200/80 bg-white p-2 shadow-premium" role="dialog" aria-label="Notifications">
+      {open && anchor
+        ? createPortal(
+            <div
+              ref={panelRef}
+              style={{ top: anchor.top, right: anchor.right }}
+              className="fixed left-4 z-[60] animate-scale-in rounded-2xl border border-slate-200/80 bg-white p-2 shadow-premium sm:left-auto sm:w-[22rem]"
+              role="dialog"
+              aria-label="Notifications"
+            >
           <div className="flex items-center justify-between px-2 py-1.5">
             <p className="font-display text-sm font-semibold text-slate-900">Notifications</p>
             {unread.length ? (
               <button
                 type="button"
                 onClick={() => markNotificationsRead(unread.map((note) => note.id)).catch(() => undefined)}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-700"
+                className="inline-flex min-h-11 items-center gap-1 px-2 text-xs font-semibold text-primary hover:text-primary-700"
               >
                 <CheckCheck className="h-3.5 w-3.5" />
                 Mark all read
@@ -125,11 +153,13 @@ export function NotificationBell() {
               </div>
             )}
           </div>
-          <Link href="/notifications" onClick={() => setOpen(false)} className="mt-1 block rounded-xl px-3 py-2 text-center text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+          <Link href="/notifications" onClick={() => setOpen(false)} className="mt-1 block rounded-xl px-3 py-3 text-center text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900">
             View all notifications
           </Link>
-        </div>
-      ) : null}
-    </div>
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
   );
 }

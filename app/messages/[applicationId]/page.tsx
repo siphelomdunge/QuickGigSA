@@ -83,7 +83,7 @@ export default function ThreadPage({ params }: { params: Promise<{ applicationId
           All conversations
         </Link>
 
-        <div className="grid gap-4 lg:grid-cols-[0.38fr_0.62fr] lg:items-start">
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[0.38fr_0.62fr] lg:items-start">
           <aside className="panel hidden p-4 lg:block lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto">
             <div className="mb-3 flex items-center justify-between px-1">
               <h2 className="font-display text-lg font-semibold text-slate-900">Conversations</h2>
@@ -115,7 +115,7 @@ export default function ThreadPage({ params }: { params: Promise<{ applicationId
                     {thread.counterpart?.name.slice(0, 2).toUpperCase()}
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-slate-900">{thread.counterpart?.name}</p>
+                    <h1 className="truncate font-semibold text-slate-900">{thread.counterpart?.name}</h1>
                     <Link href={`/gigs/${thread.application.gig_id}`} className="block truncate text-sm text-slate-500 hover:text-primary">
                       {thread.gig?.title ?? thread.application.gig_title}
                     </Link>
@@ -158,7 +158,7 @@ export default function ThreadPage({ params }: { params: Promise<{ applicationId
                 ) : (
                   groups.map((group) => (
                     <div key={group.day} className="space-y-3">
-                      <p className="sticky top-0 z-10 mx-auto w-fit rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500 shadow-sm">{group.label}</p>
+                      <p className="sticky top-0 z-10 mx-auto w-fit rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-500 shadow-sm">{group.label}</p>
                       {group.messages.map((message, index) => {
                         const mine = message.sender_id === user.id;
                         const previous = group.messages[index - 1];
@@ -172,7 +172,7 @@ export default function ThreadPage({ params }: { params: Promise<{ applicationId
                               )}
                             >
                               <p className="whitespace-pre-wrap break-words">{message.body}</p>
-                              <p className={cn('mt-1 flex items-center justify-end gap-1 text-[10px]', mine ? 'text-white/70' : 'text-slate-400')}>
+                              <p className={cn('mt-1 flex items-center justify-end gap-1 text-xs', mine ? 'text-white/70' : 'text-slate-400')}>
                                 {new Date(message.created_at).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}
                                 {mine ? message.read_at ? <CheckCheck className="h-3 w-3" aria-label="Read" /> : <Check className="h-3 w-3" aria-label="Sent" /> : null}
                               </p>
@@ -207,7 +207,7 @@ export default function ThreadPage({ params }: { params: Promise<{ applicationId
                     {!sending ? <SendHorizonal className="h-4 w-4" /> : null}
                   </Button>
                 </div>
-                <div className="mt-1.5 flex items-center justify-between px-2 text-[11px] text-slate-400">
+                <div className="mt-1.5 flex items-center justify-between px-2 text-xs text-slate-400">
                   <span>{error ? <span className="font-medium text-red-600">{error}</span> : 'Enter to send · Shift+Enter for a new line'}</span>
                   <span className={cn(draft.length > MAX_LENGTH - 100 && 'text-secondary-600')}>
                     {draft.length}/{MAX_LENGTH}

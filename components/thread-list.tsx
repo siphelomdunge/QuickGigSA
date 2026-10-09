@@ -29,24 +29,24 @@ export function ThreadList({ threads, userId, activeId }: { threads: Thread[]; u
   }
 
   return (
-    <ul className="grid gap-2">
+    <ul className="grid min-w-0 gap-2">
       {threads.map((thread) => {
         const last = thread.lastMessage;
         const preview = last ? `${last.sender_id === userId ? 'You: ' : ''}${last.body}` : 'Say hello and confirm the details.';
         const active = thread.application.id === activeId;
         return (
-          <li key={thread.application.id}>
+          <li key={thread.application.id} className="min-w-0">
             <Link
               href={`/messages/${thread.application.id}`}
               className={cn(
-                'group flex items-center gap-4 rounded-xl border p-4 transition',
+                'group flex min-w-0 items-center gap-4 rounded-xl border p-4 transition',
                 active ? 'border-primary-300 bg-primary-50/60 shadow-soft' : 'border-slate-200/80 bg-white hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-lift',
               )}
             >
               <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white">
                 {initials(thread.counterpart?.name ?? 'Q')}
                 {thread.unreadCount ? (
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1 text-xs font-bold text-white ring-2 ring-white">
                     {thread.unreadCount}
                   </span>
                 ) : null}

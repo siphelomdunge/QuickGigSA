@@ -35,7 +35,7 @@ export function StatusBadge({ status, className }: { status: string; className?:
   const live = status === 'open' || status === 'pending' || status === 'investigating';
 
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ring-1 ring-inset', toneClasses[tone], className)}>
+    <span className={cn('inline-flex w-fit shrink-0 items-center gap-1.5 self-start rounded-full px-2.5 py-1 text-xs font-semibold capitalize ring-1 ring-inset', toneClasses[tone], className)}>
       <span className="relative flex h-1.5 w-1.5">
         {live ? <span className={cn('absolute inline-flex h-full w-full animate-ping rounded-full opacity-60', dotClasses[tone])} /> : null}
         <span className={cn('relative inline-flex h-1.5 w-1.5 rounded-full', dotClasses[tone])} />

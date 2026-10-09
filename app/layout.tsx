@@ -36,7 +36,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <Providers>
           <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
             <header className="sticky top-3 z-40 mb-8 before:pointer-events-none before:absolute before:inset-x-[-1rem] before:-top-3 before:h-[calc(100%+0.75rem)] before:bg-gradient-to-b before:from-background before:via-background/90 before:to-transparent sm:before:inset-x-[-1.5rem]">
-              <div className="relative flex items-center justify-between gap-4 rounded-full border border-slate-200/70 bg-white/80 py-2.5 pl-3 pr-3 shadow-card backdrop-blur-xl">
+              <div className="relative flex items-center justify-between gap-4 rounded-full border border-slate-200/70 bg-white/80 py-2 pl-3 pr-2 shadow-card backdrop-blur-xl">
                 <Link href="/" className="group inline-flex items-center gap-2.5 text-lg font-semibold text-slate-950">
                   <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary-500 via-primary-600 to-secondary-500 text-white shadow-glow-blue ring-1 ring-inset ring-white/30 transition group-hover:scale-105">
                     <Zap className="h-4 w-4 fill-white" />
@@ -74,17 +74,17 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Explore</p>
-                  <ul className="mt-3 space-y-2 font-medium text-slate-700">
-                    <li><Link href="/browse" className="hover:text-primary">Browse gigs</Link></li>
-                    <li><Link href="/register" className="hover:text-primary">Join as a worker</Link></li>
-                    <li><Link href="/client/post-gig" className="hover:text-primary">Post a gig</Link></li>
+                  <ul className="mt-1 font-medium text-slate-700">
+                    <li><Link href="/browse" className="inline-flex min-h-11 items-center hover:text-primary">Browse gigs</Link></li>
+                    <li><Link href="/register" className="inline-flex min-h-11 items-center hover:text-primary">Join as a worker</Link></li>
+                    <li><Link href="/client/post-gig" className="inline-flex min-h-11 items-center hover:text-primary">Post a gig</Link></li>
                   </ul>
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Legal</p>
-                  <ul className="mt-3 space-y-2 font-medium text-slate-700">
-                    <li><Link href="/terms" className="hover:text-primary">Terms of Use</Link></li>
-                    <li><Link href="/privacy" className="hover:text-primary">Privacy Policy</Link></li>
+                  <ul className="mt-1 font-medium text-slate-700">
+                    <li><Link href="/terms" className="inline-flex min-h-11 items-center hover:text-primary">Terms of Use</Link></li>
+                    <li><Link href="/privacy" className="inline-flex min-h-11 items-center hover:text-primary">Privacy Policy</Link></li>
                   </ul>
                 </div>
               </div>

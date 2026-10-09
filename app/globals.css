@@ -17,7 +17,7 @@
     --slate-100: 241 245 249;
     --slate-200: 226 232 240;
     --slate-300: 203 213 225;
-    --slate-400: 148 163 184;
+    --slate-400: 100 116 139;
     --slate-500: 100 116 139;
     --slate-600: 71 85 105;
     --slate-700: 51 65 85;
@@ -26,6 +26,7 @@
     --slate-950: 2 6 23;
     --ink-900: 15 23 42;
     --ink-950: 2 6 23;
+    --primary-text: 29 78 216;
     --primary-50: 239 246 255;
     --primary-100: 219 234 254;
     --primary-700: 29 78 216;
@@ -70,6 +71,7 @@
     --slate-950: 255 255 255;
     --ink-900: 30 41 59;
     --ink-950: 23 31 52;
+    --primary-text: 147 197 253;
     --primary-50: 23 37 70;
     --primary-100: 30 51 96;
     --primary-700: 147 197 253;
@@ -198,7 +200,7 @@
   }
 
   .field {
-    @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400;
+    @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 shadow-sm outline-none transition duration-200 placeholder:text-slate-400 sm:text-sm;
   }
 
   .field:hover {

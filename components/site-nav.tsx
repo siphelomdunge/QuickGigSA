@@ -36,7 +36,7 @@ const roleLinks: Record<string, NavLink[]> = {
 
 function UnreadBadge({ count }: { count: number }) {
   return (
-    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1.5 text-[10px] font-bold text-white" aria-label={`${count} unread`}>
+    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1.5 text-xs font-bold text-white" aria-label={`${count} unread`}>
       {count > 99 ? '99+' : count}
     </span>
   );
@@ -94,7 +94,7 @@ export function SiteNav() {
 
   const linkClass = (href: string) =>
     cn(
-      'rounded-full px-3.5 py-2 text-sm font-medium transition-colors',
+      'inline-flex min-h-10 items-center rounded-full px-3.5 py-2 text-sm font-medium transition-colors',
       pathname === href || pathname.startsWith(`${href}/`) ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
     );
 
@@ -111,11 +111,11 @@ export function SiteNav() {
         {user ? (
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 text-sm shadow-sm">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-[11px] font-bold text-white">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-xs font-bold text-white">
                 {initials(fullName) || 'QG'}
               </span>
               <span className="max-w-[10rem] truncate font-medium text-slate-700">{fullName}</span>
-              {role ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">{role}</span> : null}
+              {role ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-slate-500">{role}</span> : null}
             </span>
             <button
               disabled={loading}
@@ -143,14 +143,14 @@ export function SiteNav() {
 
       {/* Mobile: a Login shortcut is always visible so the account is reachable even without opening the menu. */}
       {!user && !loading ? (
-        <Link href="/login" className="rounded-full bg-primary px-3.5 py-2 text-sm font-semibold text-white shadow-glow-blue lg:hidden">
+        <Link href="/login" className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-sm font-semibold text-white shadow-glow-blue lg:hidden">
           Login
         </Link>
       ) : null}
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 lg:hidden"
+        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 lg:hidden"
         aria-label={open ? 'Close menu' : 'Open menu'}
         aria-expanded={open}
         aria-controls="mobile-menu"
@@ -173,7 +173,7 @@ export function SiteNav() {
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close menu"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -212,7 +212,7 @@ export function SiteNav() {
                     setOpen(false);
                     signOut();
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-slate-200 px-4 text-sm font-semibold text-slate-700"
                 >
                   <LogOut className="h-4 w-4" />
                   Sign out

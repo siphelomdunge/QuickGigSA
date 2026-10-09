@@ -58,6 +58,8 @@ const config: Config = {
         slate: { ...slate, 900: v('ink-900'), 950: v('ink-950') },
       },
       borderColor: { white: v('surface') },
+      // Links/labels in brand blue need a lighter blue on dark backgrounds (4.5:1); buttons keep bg-primary as is.
+      textColor: { primary: { DEFAULT: v('primary-text') } },
       // Gradients keep their real brand colours in both themes.
       gradientColorStops: {
         white: '#FFFFFF',

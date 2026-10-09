@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 function FilterField({ label, icon: Icon, children, className }: { label: string; icon: typeof Search; children: React.ReactNode; className?: string }) {
   return (
     <label className={cn('group flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition focus-within:border-primary-400 focus-within:ring-4 focus-within:ring-primary-500/10 hover:border-slate-300', className)}>
-      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</span>
+      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</span>
       <span className="flex items-center gap-2.5">
         <Icon className="h-4 w-4 shrink-0 text-slate-400 transition group-focus-within:text-primary" />
         {children}
@@ -105,7 +105,7 @@ export function BrowseGigs() {
           <button
             type="button"
             onClick={() => setCategory('')}
-            className={cn('rounded-full px-3 py-1.5 text-xs font-semibold transition', !category ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-50')}
+            className={cn('inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold transition', !category ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-50')}
           >
             All
           </button>
@@ -114,7 +114,7 @@ export function BrowseGigs() {
               key={item}
               type="button"
               onClick={() => setCategory(category === item ? '' : item)}
-              className={cn('rounded-full px-3 py-1.5 text-xs font-semibold transition', category === item ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-50')}
+              className={cn('inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold transition', category === item ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-50')}
             >
               {item}
             </button>
@@ -145,7 +145,13 @@ export function BrowseGigs() {
           {loading ? (
             Array.from({ length: 3 }).map((_, index) => <div key={index} className="skeleton h-40" />)
           ) : filteredGigs.length ? (
-            filteredGigs.map((gig, index) => <GigCard key={gig.id} gig={gig} index={index} applied={appliedGigIds.has(gig.id)} />)
+            <ul className="grid gap-4" aria-label="Gigs">
+              {filteredGigs.map((gig, index) => (
+                <li key={gig.id}>
+                  <GigCard gig={gig} index={index} applied={appliedGigIds.has(gig.id)} />
+                </li>
+              ))}
+            </ul>
           ) : (
             <EmptyState
               icon={Search}

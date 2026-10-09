@@ -28,7 +28,7 @@ export function GigCard({ gig, index = 0, applied = false }: { gig: Gig; index?:
       <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between sm:p-6">
         <div className="min-w-0 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">{gig.category}</span>
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">{gig.category}</span>
             <StatusBadge status={gig.status} />
             {applied ? <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700 ring-1 ring-inset ring-primary-200/70">Applied</span> : null}
           </div>
