@@ -214,8 +214,6 @@ function HeroVisual() {
 export default function HomePage() {
   return (
     <div className="relative overflow-hidden pb-8">
-      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[720px] [mask-image:linear-gradient(to_bottom,black_55%,transparent)] bg-[linear-gradient(120deg,rgba(37,99,235,0.12),rgba(255,255,255,0.28),rgba(34,197,94,0.10))] dark:bg-[linear-gradient(120deg,rgba(37,99,235,0.10),transparent,rgba(34,197,94,0.06))]" />
-      <div className="pointer-events-none absolute inset-x-0 top-20 -z-10 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
       <section className="grid min-h-[calc(100vh-120px)] gap-10 py-8 lg:grid-cols-[1fr_0.92fr] lg:items-center lg:py-12">
         <FadeUp className="max-w-3xl">
