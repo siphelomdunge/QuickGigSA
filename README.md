@@ -11,6 +11,7 @@ A youth gig marketplace for South Africa. Clients post short-term gigs, workers 
 - **Messaging** between a client and a worker, one thread per accepted application, with unread counts and read receipts
 - **Dark mode** (follows the system setting; toggle in the header)
 - **Ratings & reviews**: once a gig is marked completed, the client and worker can rate each other (1–5 stars + comment, once per gig). Averages show on profiles, applicant cards and gig pages; the reviewed person is notified
+- **Edit gigs after posting** — clients can change the plan from *Manage gigs*; pending/accepted applicants get a `gig_updated` notification when the date, time, area, pay or title changes (and accepted workers when the private address changes). Completed/cancelled gigs are frozen by a DB trigger.
 - **Profile strength** meter for workers (bio, skills, experience, categories, location, verification) on the dashboard and profile; clients see the percentage on applicant cards
 - **Notifications**: a bell in the header plus optional email when someone applies, a decision is made on an application, or a message arrives (see below)
 - Supabase schema with triggers and row-level security (workers see only their own applications, clients only their own gigs)
@@ -96,7 +97,7 @@ Check these rules locally with no Supabase account (it starts a throwaway Postgr
 
 ```bash
 pip install pgserver psycopg2-binary
-python supabase/tests/rls_security_test.py              # expect 77/77 passing
+python supabase/tests/rls_security_test.py              # expect 83/83 passing
 python supabase/tests/rls_security_test.py --baseline   # skips the fixes, so you can see the holes they close
 ```
 

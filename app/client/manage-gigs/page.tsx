@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CheckCircle2, Lock, Plus, RotateCcw, Users } from 'lucide-react';
+import { CheckCircle2, Lock, Pencil, Plus, RotateCcw, Users } from 'lucide-react';
 import { AuthGate } from '@/components/auth-gate';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -56,6 +56,12 @@ export default function ManageGigsPage() {
                         {applicantCount} application{applicantCount === 1 ? '' : 's'}
                       </Link>
                       <div className="flex flex-wrap gap-2">
+                        {gig.status === 'completed' || gig.status === 'cancelled' ? null : (
+                          <Link href={`/client/gigs/${gig.id}/edit`} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                            <Pencil className="h-4 w-4" />
+                            Edit
+                          </Link>
+                        )}
                         {gig.status === 'open' ? (
                           <Button variant="outline" onClick={() => updateGigStatus(gig.id, 'closed')} className="gap-2">
                             <Lock className="h-4 w-4" />

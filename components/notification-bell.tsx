@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Bell, BellRing, CheckCheck, Inbox, MessageSquare, PartyPopper, Star, UserPlus, XCircle } from 'lucide-react';
+import { Bell, BellRing, CalendarClock, CheckCheck, Inbox, MessageSquare, PartyPopper, Star, UserPlus, XCircle } from 'lucide-react';
 import type { Notification, NotificationType } from '@/lib/mock-data';
 import { formatRelative } from '@/lib/messaging';
 import { useAuth } from '@/lib/auth';
@@ -16,6 +16,7 @@ export const notificationIcon: Record<NotificationType, { icon: typeof Bell; ton
   application_rejected: { icon: XCircle, tone: 'bg-slate-100 text-slate-600' },
   new_message: { icon: MessageSquare, tone: 'bg-secondary-50 text-orange-700' },
   new_review: { icon: Star, tone: 'bg-amber-50 text-amber-700' },
+  gig_updated: { icon: CalendarClock, tone: 'bg-primary-50 text-primary-700' },
 };
 
 export function NotificationRow({ note, onOpen, compact = false }: { note: Notification; onOpen?: (note: Notification) => void; compact?: boolean }) {

@@ -33,6 +33,7 @@ import { SiteNav } from '@/components/site-nav';
 import { NotificationBell } from '@/components/notification-bell';
 import NotificationsPage from '@/app/notifications/page';
 import WorkerDashboardPage from '@/app/worker/dashboard/page';
+import EditGigPage from '@/app/client/gigs/[id]/edit/page';
 import { useAuth } from '@/lib/auth';
 import { usePlatformStore } from '@/lib/platform-store';
 
@@ -448,6 +449,48 @@ describe('demo mode: reviews and profile strength', () => {
     expect(percent).toBeLessThan(100); // seeded Anele is not verified
     expect(screen.getByText('Verified by QuickGig')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /complete your profile/i })).toHaveAttribute('href', '/worker/profile');
+  });
+});
+
+describe('demo mode: editing a gig', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    vi.clearAllMocks();
+  });
+
+  it('client changes the time → accepted applicant is notified and the gig page shows the new time', async () => {
+    const user = userEvent.setup();
+
+    await loginAs('nandi@example.com');
+    let view = renderWithProviders(<EditGigPage params={params('gig_2')} />);
+    await screen.findByRole('button', { name: 'Save changes' });
+    const start = screen.getByLabelText('Start time') as HTMLInputElement;
+    await user.clear(start);
+    await user.type(start, '10:30');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/client/gigs/gig_2/applications'));
+    const persisted = JSON.parse(window.localStorage.getItem(STORE_KEY)!);
+    expect(persisted.gigs.find((g: { id: string }) => g.id === 'gig_2')).toMatchObject({ start_time: '10:30' });
+    expect(persisted.notifications.filter((n: { type: string; user_id: string }) => n.type === 'gig_updated' && n.user_id === 'user_1')).toHaveLength(1);
+    view.unmount();
+
+    await loginAs('anele@example.com');
+    view = renderWithProviders(<NotificationsPage />);
+    await screen.findByText(/Gig updated: Delivery runner/);
+    expect(screen.getByText(/time is now 10:30/)).toBeInTheDocument();
+    view.unmount();
+
+    view = renderWithProviders(<GigPage params={params('gig_2')} />);
+    await screen.findByText(/10:30 –/);
+    view.unmount();
+  });
+
+  it('another client cannot open the edit form for a gig they do not own', async () => {
+    await loginAs('nandi@example.com');
+    const view = renderWithProviders(<EditGigPage params={params('gig_5')} />);
+    await screen.findByText('Not your gig');
+    expect(screen.queryByRole('button', { name: 'Save changes' })).not.toBeInTheDocument();
+    view.unmount();
   });
 });
 

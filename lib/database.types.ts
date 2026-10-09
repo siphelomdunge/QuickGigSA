@@ -165,7 +165,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          type: 'new_application' | 'application_accepted' | 'application_rejected' | 'new_message' | 'new_review';
+          type: 'new_application' | 'application_accepted' | 'application_rejected' | 'new_message' | 'new_review' | 'gig_updated';
           title: string;
           body: string;
           link: string;

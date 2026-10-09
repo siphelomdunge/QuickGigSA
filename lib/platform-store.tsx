@@ -29,6 +29,7 @@ import { supabase } from '@/lib/supabase';
 import type { Database } from '@/lib/database.types';
 
 type CreateGigInput = Omit<Gig, 'id' | 'client_name' | 'status' | 'created_at' | 'updated_at'>;
+export type UpdateGigInput = Omit<CreateGigInput, 'client_id'>;
 type CreateReportInput = Pick<Report, 'reported_by' | 'reported_user_id' | 'gig_id' | 'reason' | 'description'>;
 type GigRow = Database['public']['Tables']['gigs']['Row'];
 type ApplicationRow = Database['public']['Tables']['applications']['Row'];
@@ -74,6 +75,7 @@ interface PlatformStoreValue {
   setEmailNotifications: (userId: string, enabled: boolean) => Promise<void>;
   updateApplicationStatus: (id: string, status: ApplicationStatus) => Promise<void>;
   updateGigStatus: (id: string, status: GigStatus) => Promise<void>;
+  updateGig: (id: string, data: UpdateGigInput) => Promise<void>;
   updateVerificationStatus: (profileType: 'worker' | 'client', profileId: string, status: VerificationStatus) => Promise<void>;
   updateReportStatus: (id: string, status: ReportStatus) => Promise<void>;
   updateWorkerProfile: (userId: string, data: Partial<Pick<WorkerProfile, 'bio' | 'skills' | 'experience' | 'transport_available' | 'preferred_categories'>>) => Promise<void>;
@@ -557,6 +559,70 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     setGigs((current) => current.map((gig) => (gig.id === id ? { ...gig, status, updated_at: new Date().toISOString() } : gig)));
   }, []);
 
+  const updateGig = useCallback(
+    async (id: string, data: UpdateGigInput) => {
+      const existing = gigs.find((gig) => gig.id === id);
+      if (!existing) throw new Error('This gig no longer exists.');
+      if (existing.status === 'completed' || existing.status === 'cancelled') throw new Error('Completed or cancelled gigs cannot be edited.');
+      const { address_private, ...fields } = data;
+
+      if (supabase) {
+        const { error } = await supabase.from('gigs').update(fields).eq('id', id);
+        if (error) throw error;
+        if (address_private !== existing.address_private) {
+          const { error: addressError } = await supabase.from('gig_private_details').upsert({ gig_id: id, address: address_private }, { onConflict: 'gig_id' });
+          if (addressError) throw addressError;
+        }
+        setGigs((current) => current.map((gig) => (gig.id === id ? { ...gig, ...data, updated_at: new Date().toISOString() } : gig)));
+        return;
+      }
+
+      setGigs((current) => current.map((gig) => (gig.id === id ? { ...gig, ...data, updated_at: new Date().toISOString() } : gig)));
+
+      // Mirror the DB triggers: tell pending/accepted applicants about changes that affect them.
+      const changes: string[] = [];
+      if (data.date !== existing.date) changes.push(`date is now ${data.date}`);
+      if (data.start_time !== existing.start_time || data.end_time !== existing.end_time) changes.push(`time is now ${data.start_time}–${data.end_time}`);
+      if (data.location_area !== existing.location_area) changes.push(`area is now ${clip(data.location_area, 60)}`);
+      if (data.pay_amount !== existing.pay_amount) changes.push(`pay is now R${data.pay_amount}`);
+      if (data.title !== existing.title) changes.push(`title is now "${clip(data.title, 80)}"`);
+      const addressChanged = address_private !== existing.address_private;
+      if (!changes.length && !addressChanged) return;
+
+      const affected = applications.filter((application) => application.gig_id === id && (application.status === 'pending' || application.status === 'accepted'));
+      const fresh = affected.flatMap((application) => {
+        const notes: Notification[] = [];
+        if (changes.length) {
+          notes.push(
+            demoNotification({
+              user_id: application.worker_id,
+              type: 'gig_updated',
+              title: `Gig updated: ${clip(data.title, 80)}`,
+              body: clip(`The ${changes.join('; the ')}.`, 300),
+              link: `/gigs/${id}`,
+              application_id: application.id,
+            }),
+          );
+        }
+        if (addressChanged && application.status === 'accepted') {
+          notes.push(
+            demoNotification({
+              user_id: application.worker_id,
+              type: 'gig_updated',
+              title: `Address changed: ${clip(data.title, 80)}`,
+              body: 'The client updated the private address. Open the gig to see the new one.',
+              link: `/gigs/${id}`,
+              application_id: application.id,
+            }),
+          );
+        }
+        return notes;
+      });
+      if (fresh.length) setNotifications((current) => [...fresh, ...current]);
+    },
+    [applications, gigs],
+  );
+
   const updateVerificationStatus = useCallback(async (profileType: 'worker' | 'client', profileId: string, status: VerificationStatus) => {
     if (supabase) {
       const table = profileType === 'worker' ? 'worker_profiles' : 'client_profiles';
@@ -793,6 +859,7 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
       setEmailNotifications,
       updateApplicationStatus,
       updateGigStatus,
+      updateGig,
       updateVerificationStatus,
       updateReportStatus,
       updateWorkerProfile,
@@ -821,6 +888,7 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
       resetDemoData,
       updateApplicationStatus,
       updateClientProfile,
+      updateGig,
       updateGigStatus,
       updateReportStatus,
       updateVerificationStatus,

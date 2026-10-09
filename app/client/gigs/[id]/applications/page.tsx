@@ -2,7 +2,7 @@
 
 import { use, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Check, CheckCircle2, MapPin, MessageSquare, Star, X } from 'lucide-react';
+import { Check, CheckCircle2, MapPin, MessageSquare, Pencil, Star, X } from 'lucide-react';
 import { AuthGate } from '@/components/auth-gate';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -52,7 +52,15 @@ export default function ClientGigApplicationsPage({ params }: ApplicationsPagePr
               <h1 className="mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">{gig.title}</h1>
               <p className="mt-3 max-w-2xl text-slate-600">Review applicants and accept or reject each worker request.</p>
             </div>
-            <StatusBadge status={gig.status} />
+            <div className="flex flex-wrap items-center gap-3">
+              <StatusBadge status={gig.status} />
+              {gig.status === 'completed' || gig.status === 'cancelled' ? null : (
+                <Link href={`/client/gigs/${gig.id}/edit`} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                  <Pencil className="h-4 w-4" />
+                  Edit gig
+                </Link>
+              )}
+            </div>
           </div>
         </section>
 

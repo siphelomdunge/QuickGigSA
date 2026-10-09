@@ -85,7 +85,7 @@ export interface Message {
   read_at: string | null;
 }
 
-export type NotificationType = 'new_application' | 'application_accepted' | 'application_rejected' | 'new_message' | 'new_review';
+export type NotificationType = 'new_application' | 'application_accepted' | 'application_rejected' | 'new_message' | 'new_review' | 'gig_updated';
 
 export interface Notification {
   id: string;

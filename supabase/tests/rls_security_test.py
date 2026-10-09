@@ -343,6 +343,27 @@ if not BASELINE:
     r = attempt(client1, ("insert into public.reviews (gig_id, reviewer_id, reviewed_user_id, rating, comment) values (%s, %s, %s, 1, %s)", (str(done_gig), str(client1), str(worker3), "x" * 601)))
     check("Over-long review comments are rejected", blocked(r), str(r))
 
+# ---- gig edits ---------------------------------------------------------------------------------
+if not BASELINE:
+    before = admin("select count(*) from public.notifications where type = 'gig_updated'")[0][0]
+    r = attempt(client1, ("update public.gigs set start_time = '10:30', end_time = '13:30' where id = %s", (str(gig),)))
+    check("A client can edit their own gig", not blocked(r) and r == 1, str(r))
+    admin("update public.gigs set start_time = '10:30', end_time = '13:30' where id = %s", (str(gig),))
+    after = admin("select count(*) from public.notifications where type = 'gig_updated'")[0][0]
+    pending_or_accepted = admin("select count(*) from public.applications where gig_id = %s and status in ('pending', 'accepted')", (str(gig),))[0][0]
+    check("Pending and accepted applicants are told when the time changes", after - before == pending_or_accepted and pending_or_accepted > 0, f"{after - before} of {pending_or_accepted}")
+    before = after
+    admin("update public.gigs set description = 'same plan, clearer words' where id = %s", (str(gig),))
+    after = admin("select count(*) from public.notifications where type = 'gig_updated'")[0][0]
+    check("Wording-only edits do not notify anyone", after == before, str(after - before))
+    r = attempt(client2, ("update public.gigs set title = 'hijacked' where id = %s", (str(gig),)))
+    check("Another client cannot edit the gig", blocked(r) or r == 0, str(r))
+    r = attempt(client1, ("update public.gigs set client_id = %s where id = %s", (str(client2), str(gig))))
+    check("A client cannot hand a gig to someone else", blocked(r), str(r))
+    admin("update public.gigs set status = 'completed' where id = %s", (str(done_gig),))
+    r = attempt(client1, ("update public.gigs set title = 'too late' where id = %s", (str(done_gig),)))
+    check("A completed gig cannot be edited", blocked(r), str(r))
+
 # ---- report -----------------------------------------------------------------------------------
 width = max(len(n) for n, _, _ in results)
 print("\nMODE:", "BASELINE (without security fixes)" if BASELINE else "WITH security fixes")
