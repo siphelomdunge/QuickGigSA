@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { RatingInline } from '@/components/reviews-section';
 import { Textarea } from '@/components/ui/textarea';
 import { Toast } from '@/components/ui/toast';
 
@@ -159,6 +160,7 @@ export default function GigPage({ params }: GigPageProps) {
                 {gig.client_name.slice(0, 2).toUpperCase()}
               </span>
               Posted by <span className="font-semibold text-slate-900">{gig.client_name}</span>
+              <RatingInline userId={gig.client_id} className="ml-1" />
             </p>
           </div>
           <div className="shrink-0 rounded-2xl bg-slate-900 p-6 text-white shadow-premium lg:min-w-[15rem]">

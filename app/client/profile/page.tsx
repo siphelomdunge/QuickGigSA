@@ -9,6 +9,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/lib/auth';
 import { EmailPreference } from '@/components/email-preference';
+import { ReviewsSection } from '@/components/reviews-section';
 import type { ClientProfile } from '@/lib/mock-data';
 import { usePlatformStore } from '@/lib/platform-store';
 
@@ -39,6 +40,7 @@ export default function ClientProfilePage() {
           <EmptyState title="Profile not ready yet" description="Sign up as a client to create a business profile." />
         )}
 
+        {user ? <ReviewsSection userId={user.id} title="Reviews from workers" /> : null}
         <EmailPreference />
       </div>
     </AuthGate>

@@ -7,6 +7,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useAuth } from '@/lib/auth';
 import { usePlatformStore } from '@/lib/platform-store';
+import { ReviewButton } from '@/components/review-dialog';
+import { canReview } from '@/lib/reviews';
 
 export default function WorkerApplicationsPage() {
   const { user } = useAuth();
@@ -62,6 +64,7 @@ export default function WorkerApplicationsPage() {
                       <Link href={`/gigs/${application.gig_id}`} className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
                         View gig
                       </Link>
+                      {gig && canReview(application) ? <ReviewButton gigId={gig.id} gigTitle={gig.title} userId={gig.client_id} userName={gig.client_name} /> : null}
                     </div>
                   </div>
                 </article>

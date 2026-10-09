@@ -8,6 +8,10 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { usePlatformStore } from '@/lib/platform-store';
+import { RatingInline } from '@/components/reviews-section';
+import { ReviewButton } from '@/components/review-dialog';
+import { canReview } from '@/lib/reviews';
+import { workerCompleteness } from '@/lib/profile-completeness';
 
 interface ApplicationsPageProps {
   params: Promise<{ id: string }>;
@@ -67,6 +71,10 @@ export default function ClientGigApplicationsPage({ params }: ApplicationsPagePr
                         <p className="text-lg font-semibold text-slate-900">{profile?.full_name ?? worker?.full_name ?? application.worker_name}</p>
                         <StatusBadge status={application.status} />
                         <StatusBadge status={profile?.verification_status ?? 'unverified'} />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                        <RatingInline userId={application.worker_id} />
+                        <span className="text-xs font-medium text-slate-500">Profile {workerCompleteness(profile).percent}% complete</span>
                       </div>
 
                       <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
@@ -130,6 +138,9 @@ export default function ClientGigApplicationsPage({ params }: ApplicationsPagePr
                         <CheckCircle2 className="h-4 w-4" />
                         Complete
                       </Button>
+                      {canReview(application) ? (
+                        <ReviewButton gigId={application.gig_id} gigTitle={gig.title} userId={application.worker_id} userName={profile?.full_name ?? worker?.full_name ?? application.worker_name} size="md" />
+                      ) : null}
                     </div>
                   </div>
                 </article>

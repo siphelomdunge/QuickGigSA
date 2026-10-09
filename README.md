@@ -10,6 +10,8 @@ A youth gig marketplace for South Africa. Clients post short-term gigs, workers 
 - Post, browse and manage gigs; apply to gigs; review applicants
 - **Messaging** between a client and a worker, one thread per accepted application, with unread counts and read receipts
 - **Dark mode** (follows the system setting; toggle in the header)
+- **Ratings & reviews**: once a gig is marked completed, the client and worker can rate each other (1–5 stars + comment, once per gig). Averages show on profiles, applicant cards and gig pages; the reviewed person is notified
+- **Profile strength** meter for workers (bio, skills, experience, categories, location, verification) on the dashboard and profile; clients see the percentage on applicant cards
 - **Notifications**: a bell in the header plus optional email when someone applies, a decision is made on an application, or a message arrives (see below)
 - Supabase schema with triggers and row-level security (workers see only their own applications, clients only their own gigs)
 - Runs without Supabase on mock data and `localStorage`, so you can try it with zero setup
@@ -85,7 +87,7 @@ The database rules in `supabase/migrations/` enforce access, not just the UI:
 
 - Signups can only be `worker` or `client`. Roles, `verification_status` and `rating` can be changed only by an admin or by trusted server-side code. To create the first admin, run this in the Supabase SQL editor: `update public.users set role = 'admin' where email = 'you@example.com';`
 - The private address lives in `gig_private_details`. Only the gig owner, an admin, or a worker with an accepted application can read it.
-- Reviews are limited to the two people on an accepted application, once each.
+- Reviews are limited to the two people on an accepted application, once each, max 600 characters. Stored ratings are recomputed by a trigger from the reviews table; users still cannot set their own rating.
 - Messages (`messages` table) can only be read and sent by the gig owner and the worker on an application, and only once it is accepted or completed. Admins can read threads for moderation but not write. Messages are immutable; only the recipient can set `read_at`.
 - An application's gig, worker and message cannot be changed once created (only its status).
 - Notifications are created only by triggers. A user can read their own and mark them read (nothing else can change); the email flag is set by the service role only. Each accept/reject decision is notified at most once per application (a client flipping their decision can't spam the worker), and names/titles are truncated before they reach notification text or emails.
@@ -94,7 +96,7 @@ Check these rules locally with no Supabase account (it starts a throwaway Postgr
 
 ```bash
 pip install pgserver psycopg2-binary
-python supabase/tests/rls_security_test.py              # expect 72/72 passing
+python supabase/tests/rls_security_test.py              # expect 77/77 passing
 python supabase/tests/rls_security_test.py --baseline   # skips the fixes, so you can see the holes they close
 ```
 

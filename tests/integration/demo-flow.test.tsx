@@ -32,6 +32,7 @@ import ThreadPage from '@/app/messages/[applicationId]/page';
 import { SiteNav } from '@/components/site-nav';
 import { NotificationBell } from '@/components/notification-bell';
 import NotificationsPage from '@/app/notifications/page';
+import WorkerDashboardPage from '@/app/worker/dashboard/page';
 import { useAuth } from '@/lib/auth';
 import { usePlatformStore } from '@/lib/platform-store';
 
@@ -387,6 +388,66 @@ describe('demo mode: notifications', () => {
     await user.click(toggle);
     await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'false'));
     await waitFor(() => expect(JSON.parse(window.localStorage.getItem(STORE_KEY)!).emailNotifications).toBe(false));
+  });
+});
+
+describe('demo mode: reviews and profile strength', () => {
+  it('client completes a gig, reviews the worker; worker sees the rating, a notification, and can review back once', async () => {
+    const user = userEvent.setup();
+
+    // Seeded app_2: Anele (user_1) accepted on gig_2 (Nandi / Khumalo Eats). Complete it, then review.
+    await loginAs('nandi@example.com');
+    let view = renderWithProviders(<ClientGigApplicationsPage params={params('gig_2')} />);
+    const card = (await screen.findByText('Anele Mpofu')).closest('article')!;
+    expect(within(card).queryByRole('button', { name: /review anele/i })).not.toBeInTheDocument(); // not until completed
+    await user.click(within(card).getByRole('button', { name: /complete/i }));
+    await user.click(await within(card).findByRole('button', { name: /review anele/i }));
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Post review' }));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(/pick a star rating/i);
+    await user.click(within(dialog).getByRole('radio', { name: /5 stars/i }));
+    await user.type(within(dialog).getByLabelText(/comment/i), 'Fast and friendly.');
+    await user.click(within(dialog).getByRole('button', { name: 'Post review' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(within(card).getByText('You rated')).toBeInTheDocument(); // button replaced, so no second review
+    view.unmount();
+
+    // Worker: notification + review on profile; seeded 5 (review_1) + new 5 = 5.0 from 2 reviews.
+    await loginAs('anele@example.com');
+    view = renderWithProviders(<NotificationsPage />);
+    expect(await screen.findByText(/New 5-star review from Khumalo Eats/)).toBeInTheDocument();
+    view.unmount();
+    view = renderWithProviders(<WorkerProfilePage />);
+    expect(await screen.findByText('Fast and friendly.')).toBeInTheDocument();
+    expect(screen.getByText('2 reviews')).toBeInTheDocument();
+    expect(screen.getByText('5.0')).toBeInTheDocument();
+    view.unmount();
+
+    // Worker reviews the client back from My applications.
+    view = renderWithProviders(<WorkerApplicationsPage />);
+    const appCard = (await screen.findByText('Delivery runner for quick packages')).closest('article')!;
+    await user.click(within(appCard).getByRole('button', { name: /review khumalo/i }));
+    const dialog2 = await screen.findByRole('dialog');
+    await user.click(within(dialog2).getByRole('radio', { name: /4 stars/i }));
+    await user.click(within(dialog2).getByRole('button', { name: 'Post review' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(within(appCard).getByText('You rated')).toBeInTheDocument();
+    view.unmount();
+
+    await loginAs('nandi@example.com');
+    renderWithProviders(<ClientProfilePage />);
+    expect(await screen.findByText('1 review')).toBeInTheDocument();
+  });
+
+  it('shows profile strength with what is missing and links to the profile', async () => {
+    await loginAs('anele@example.com');
+    renderWithProviders(<WorkerDashboardPage />);
+    const bar = await screen.findByRole('progressbar', { name: /profile completeness/i });
+    const percent = Number(bar.getAttribute('aria-valuenow'));
+    expect(percent).toBeGreaterThan(0);
+    expect(percent).toBeLessThan(100); // seeded Anele is not verified
+    expect(screen.getByText('Verified by QuickGig')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /complete your profile/i })).toHaveAttribute('href', '/worker/profile');
   });
 });
 

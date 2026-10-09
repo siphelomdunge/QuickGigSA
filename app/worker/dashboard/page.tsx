@@ -8,10 +8,12 @@ import { StatCard } from '@/components/ui/stat-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useAuth } from '@/lib/auth';
 import { usePlatformStore } from '@/lib/platform-store';
+import { ProfileCompleteness } from '@/components/profile-completeness';
 
 export default function WorkerDashboardPage() {
   const { user } = useAuth();
-  const { gigs, applications } = usePlatformStore();
+  const { gigs, applications, workerProfiles } = usePlatformStore();
+  const profile = user ? workerProfiles.find((item) => item.user_id === user.id) : undefined;
   const workerApplications = user ? applications.filter((app) => app.worker_id === user.id) : [];
   const openGigs = gigs.filter((gig) => gig.status === 'open');
   const accepted = workerApplications.filter((app) => app.status === 'accepted').length;
@@ -43,6 +45,8 @@ export default function WorkerDashboardPage() {
             <StatCard label="Accepted" value={accepted} icon={CheckCircle2} tone="blue" />
           </div>
         </section>
+
+        <ProfileCompleteness profile={profile} compact />
 
         <div className="grid gap-6 xl:grid-cols-[1.4fr_0.6fr]">
           <section className="panel p-6 sm:p-8">

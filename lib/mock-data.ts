@@ -85,7 +85,7 @@ export interface Message {
   read_at: string | null;
 }
 
-export type NotificationType = 'new_application' | 'application_accepted' | 'application_rejected' | 'new_message';
+export type NotificationType = 'new_application' | 'application_accepted' | 'application_rejected' | 'new_message' | 'new_review';
 
 export interface Notification {
   id: string;
@@ -458,6 +458,15 @@ export const mockReviews: Review[] = [
     reviewed_user_id: 'user_1',
     rating: 5,
     comment: 'Arrived early and completed the setup checklist carefully.',
+    created_at: '2026-05-25',
+  },
+  {
+    id: 'review_2',
+    gig_id: 'gig_5',
+    reviewer_id: 'user_1',
+    reviewed_user_id: 'user_5',
+    rating: 4,
+    comment: 'Clear instructions and paid on the day as agreed.',
     created_at: '2026-05-25',
   },
 ];

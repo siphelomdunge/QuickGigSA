@@ -9,6 +9,8 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/lib/auth';
 import { EmailPreference } from '@/components/email-preference';
+import { ProfileCompleteness } from '@/components/profile-completeness';
+import { ReviewsSection } from '@/components/reviews-section';
 import type { WorkerProfile } from '@/lib/mock-data';
 import { usePlatformStore } from '@/lib/platform-store';
 
@@ -46,6 +48,8 @@ export default function WorkerProfilePage() {
           <EmptyState title="Profile not ready yet" description="Sign up as a worker to create a worker profile." />
         )}
 
+        {profile ? <ProfileCompleteness profile={profile} /> : null}
+        {user ? <ReviewsSection userId={user.id} /> : null}
         <EmailPreference />
       </div>
     </AuthGate>

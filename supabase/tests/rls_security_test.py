@@ -323,6 +323,26 @@ if not BASELINE:
     check("A very long name is truncated in the notification title", len(note[0]) <= 80, f"{len(note[0])} characters")
     check("A very long name is truncated in the notification body", len(note[1]) <= 160, f"{len(note[1])} characters")
 
+# ---- reviews & ratings --------------------------------------------------------------------------
+if not BASELINE:
+    done_gig = uuid.uuid4()
+    admin("insert into public.gigs (id, client_id, title, description, category, location_area, date, start_time, end_time, pay_amount) "
+          "values (%s, %s, 'Done gig', 'd', 'Events', 'CT', '2026-06-01', '09:00', '12:00', 200)", (str(done_gig), str(client1)))
+    admin("insert into public.applications (gig_id, worker_id, message, status) values (%s, %s, 'hi', 'completed')", (str(done_gig), str(worker1)))
+    r = attempt(client1, ("insert into public.reviews (gig_id, reviewer_id, reviewed_user_id, rating, comment) values (%s, %s, %s, 5, 'Great') returning id", (str(done_gig), str(client1), str(worker1))))
+    check("A client can review the worker on a completed gig", not blocked(r), str(r))
+    notes_before = admin("select count(*) from public.notifications where user_id = %s and type = 'new_review'", (str(worker1),))[0][0]
+    admin("insert into public.reviews (gig_id, reviewer_id, reviewed_user_id, rating, comment) values (%s, %s, %s, 4, 'Good') on conflict do nothing", (str(done_gig), str(client1), str(worker1)))
+    expected = admin("select round(avg(rating)::numeric, 2) from public.reviews where reviewed_user_id = %s", (str(worker1),))[0][0]
+    r = admin("select rating from public.worker_profiles where user_id = %s", (str(worker1),))[0][0]
+    check("The reviewed user's stored rating is recomputed from their reviews", float(r) == float(expected) and float(r) > 0, f"{r} vs {expected}")
+    r = admin("select count(*) from public.notifications where user_id = %s and type = 'new_review'", (str(worker1),))[0][0]
+    check("The reviewed user is notified", r - notes_before == 1, str(r - notes_before))
+    r = attempt(worker1, ("update public.worker_profiles set rating = 5 where user_id = %s", (str(worker1),)))
+    check("A worker still cannot set their own rating directly", blocked(r), str(r))
+    r = attempt(client1, ("insert into public.reviews (gig_id, reviewer_id, reviewed_user_id, rating, comment) values (%s, %s, %s, 1, %s)", (str(done_gig), str(client1), str(worker3), "x" * 601)))
+    check("Over-long review comments are rejected", blocked(r), str(r))
+
 # ---- report -----------------------------------------------------------------------------------
 width = max(len(n) for n, _, _ in results)
 print("\nMODE:", "BASELINE (without security fixes)" if BASELINE else "WITH security fixes")
