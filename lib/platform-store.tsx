@@ -208,6 +208,11 @@ function getInitialState() {
 }
 
 /** Demo-mode stand-in for the database triggers in 20260601000000_notifications.sql. */
+/** Same truncation the DB triggers apply, so long names can't be used to smuggle text into notifications/emails. */
+function clip(value: string, max: number) {
+  return value.length > max ? value.slice(0, max) : value;
+}
+
 function demoNotification(input: Omit<Notification, 'id' | 'read_at' | 'created_at'>): Notification {
   return { ...input, id: `note_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, read_at: null, created_at: new Date().toISOString() };
 }
@@ -431,8 +436,8 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
           demoNotification({
             user_id: gig.client_id,
             type: 'new_application',
-            title: `New applicant: ${worker_name}`,
-            body: `${worker_name} applied to "${gig.title}".`,
+            title: `New applicant: ${clip(worker_name, 60)}`,
+            body: `${clip(worker_name, 60)} applied to "${clip(gig.title, 80)}".`,
             link: `/client/gigs/${gig.id}/applications`,
             application_id: application.id,
           }),
@@ -460,26 +465,32 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
       const application = applications.find((item) => item.id === id);
       const gig = application ? gigs.find((item) => item.id === application.gig_id) : undefined;
       if (application && gig) {
-        setNotifications((current) => [
+        const type = status === 'accepted' ? 'application_accepted' : 'application_rejected';
+        setNotifications((current) => {
+          // Mirrors the DB unique index: each decision is notified at most once per application,
+          // so a client flipping accept/reject cannot spam the worker.
+          if (current.some((note) => note.application_id === application.id && note.type === type)) return current;
+          return [
           status === 'accepted'
             ? demoNotification({
                 user_id: application.worker_id,
                 type: 'application_accepted',
-                title: `You got the gig: ${gig.title}`,
-                body: `${gig.client_name} accepted your application. Say hello and confirm the details.`,
+                title: `You got the gig: ${clip(gig.title, 80)}`,
+                body: `${clip(gig.client_name, 60)} accepted your application. Say hello and confirm the details.`,
                 link: `/messages/${application.id}`,
                 application_id: application.id,
               })
             : demoNotification({
                 user_id: application.worker_id,
                 type: 'application_rejected',
-                title: `Update on ${gig.title}`,
+                title: `Update on ${clip(gig.title, 80)}`,
                 body: 'The client went with someone else this time. More gigs are posted every week.',
                 link: '/browse',
                 application_id: application.id,
               }),
           ...current,
-        ]);
+          ];
+        });
       }
     }
   }, [applications, gigs]);
@@ -616,7 +627,7 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
           demoNotification({
             user_id: recipient,
             type: 'new_message',
-            title: `Message from ${senderName}`,
+            title: `Message from ${clip(senderName, 60)}`,
             body: trimmed.length > 140 ? `${trimmed.slice(0, 140)}…` : trimmed,
             link: `/messages/${application_id}`,
             application_id,

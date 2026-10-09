@@ -304,6 +304,25 @@ if not BASELINE:
                 "select email_notifications from public.users where id = '%s'" % client2)
     check("A user can switch off email notifications", not blocked(r) and r[0][0] is False, str(r))
 
+# ---- notification abuse limits ----------------------------------------------------------------
+if not BASELINE:
+    flip_app = admin("select id from public.applications where worker_id = %s and gig_id = %s", (str(worker2), str(gig)))[0][0]
+    flips_before = admin("select count(*) from public.notifications where user_id = %s", (str(worker2),))[0][0]
+    r = attempt(client1, *[("update public.applications set status = %s where id = %s", (st, str(flip_app))) for st in ["accepted", "rejected"] * 5])
+    check("A client can still change their decision", not blocked(r) and r == 1, str(r))
+    for st in ["accepted", "rejected"] * 5:
+        admin("update public.applications set status = %s where id = %s", (st, str(flip_app)))
+    flips_after = admin("select count(*) from public.notifications where user_id = %s", (str(worker2),))[0][0]
+    check("Flipping a decision ten times sends the worker at most two notifications", flips_after - flips_before <= 2, f"{flips_after - flips_before} created")
+
+    long_name = "URGENT: claim your R5000 prize at http://evil.example " * 5
+    spammer = signup("spammer@t.co")
+    admin("update public.users set full_name = %s where id = %s", (long_name, str(spammer)))
+    new_app = admin("insert into public.applications (gig_id, worker_id, message) values (%s, %s, 'hi') returning id", (str(gig), str(spammer)))[0][0]
+    note = admin("select title, body from public.notifications where application_id = %s and type = 'new_application'", (str(new_app),))[0]
+    check("A very long name is truncated in the notification title", len(note[0]) <= 80, f"{len(note[0])} characters")
+    check("A very long name is truncated in the notification body", len(note[1]) <= 160, f"{len(note[1])} characters")
+
 # ---- report -----------------------------------------------------------------------------------
 width = max(len(n) for n, _, _ in results)
 print("\nMODE:", "BASELINE (without security fixes)" if BASELINE else "WITH security fixes")

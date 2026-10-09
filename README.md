@@ -88,13 +88,13 @@ The database rules in `supabase/migrations/` enforce access, not just the UI:
 - Reviews are limited to the two people on an accepted application, once each.
 - Messages (`messages` table) can only be read and sent by the gig owner and the worker on an application, and only once it is accepted or completed. Admins can read threads for moderation but not write. Messages are immutable; only the recipient can set `read_at`.
 - An application's gig, worker and message cannot be changed once created (only its status).
-- Notifications are created only by triggers. A user can read their own and mark them read (nothing else can change); the email flag is set by the service role only.
+- Notifications are created only by triggers. A user can read their own and mark them read (nothing else can change); the email flag is set by the service role only. Each accept/reject decision is notified at most once per application (a client flipping their decision can't spam the worker), and names/titles are truncated before they reach notification text or emails.
 
 Check these rules locally with no Supabase account (it starts a throwaway Postgres with a stand-in for Supabase's auth):
 
 ```bash
 pip install pgserver psycopg2-binary
-python supabase/tests/rls_security_test.py              # expect 68/68 passing
+python supabase/tests/rls_security_test.py              # expect 72/72 passing
 python supabase/tests/rls_security_test.py --baseline   # skips the fixes, so you can see the holes they close
 ```
 
