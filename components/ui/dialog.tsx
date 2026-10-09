@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -13,7 +14,12 @@ interface DialogProps {
   className?: string;
 }
 
+const subscribeNoop = () => () => {};
+
 export function Dialog({ open, title, description, children, onClose, className }: DialogProps) {
+  // Cards/panels use transforms, filters and animations, which turn `position: fixed` into a local box.
+  // Rendering into <body> keeps the overlay above everything (header pill, cards) and centred in the viewport.
+  const mounted = useSyncExternalStore(subscribeNoop, () => true, () => false);
   useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => event.key === 'Escape' && onClose();
@@ -26,9 +32,9 @@ export function Dialog({ open, title, description, children, onClose, className 
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex animate-fade-in items-end justify-center bg-slate-950/40 p-4 backdrop-blur-sm sm:items-center"
       role="dialog"
@@ -55,6 +61,7 @@ export function Dialog({ open, title, description, children, onClose, className 
         </div>
         <div className="mt-6">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
