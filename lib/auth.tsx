@@ -34,6 +34,29 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const DEMO_AUTH_KEY = 'quickgig-sa-demo-auth';
 
+/** localStorage can throw (Safari private mode, storage full, disabled). Never let that block auth. */
+function safeStorageSet(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (error) {
+    console.warn('[auth] Could not persist session to localStorage:', error);
+  }
+}
+function safeStorageGet(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+function safeStorageRemove(key: string) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
 function getUserRole(user: AuthUser | null): UserRole | null {
   if (!user) return null;
   const metadata = user.user_metadata as { role?: UserRole } | undefined;
@@ -142,9 +165,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!supabase) {
-      const storedUser = window.localStorage.getItem(DEMO_AUTH_KEY);
+      // Demo mode: hydrate the session from localStorage (an external store) once on mount.
+      const storedUser = safeStorageGet(DEMO_AUTH_KEY);
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser) as AuthUser;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setUser(parsedUser);
         setRole(getUserRole(parsedUser));
       }
@@ -190,7 +215,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         location: seededUser?.location,
         role: seededUser?.role ?? fallbackRole,
       });
-      window.localStorage.setItem(DEMO_AUTH_KEY, JSON.stringify(demoUser));
+      safeStorageSet(DEMO_AUTH_KEY, JSON.stringify(demoUser));
       setUser(demoUser);
       setSession(null);
       setRole(getUserRole(demoUser));
@@ -208,8 +233,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setSession(data.session);
     setUser(data.user);
-    await resolveRole(data.user);
-    setLoading(false);
+    try {
+      await resolveRole(data.user);
+    } catch (roleError) {
+      console.warn('[auth] Could not resolve role after sign-in:', roleError);
+    } finally {
+      setLoading(false);
+    }
   }, [resolveRole]);
 
   const signUp = useCallback(async ({ email, password, full_name, phone, location, role, consent }: { email: string; password: string; full_name: string; phone: string; location: string; role: string; consent?: { terms_version: string } }) => {
@@ -217,7 +247,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
       const demoUser = createDemoUser({ email, full_name, phone, location, role });
-      window.localStorage.setItem(DEMO_AUTH_KEY, JSON.stringify(demoUser));
+      safeStorageSet(DEMO_AUTH_KEY, JSON.stringify(demoUser));
       setUser(demoUser);
       setSession(null);
       setRole(getUserRole(demoUser));
@@ -249,14 +279,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setSession(data.session);
     setUser(data.user ?? null);
-    await resolveRole(data.user ?? null);
-    setLoading(false);
+    try {
+      await resolveRole(data.user ?? null);
+    } catch (roleError) {
+      // The account exists; a failed profile lookup must not leave the UI stuck. The role is
+      // re-resolved on focus / auth state change.
+      console.warn('[auth] Could not resolve role after sign-up:', roleError);
+      setRole(role === 'client' ? 'client' : 'worker');
+    } finally {
+      setLoading(false);
+    }
     return { needsEmailConfirmation: !data.session };
   }, [resolveRole]);
 
   const signOut = useCallback(async () => {
     if (!supabase) {
-      window.localStorage.removeItem(DEMO_AUTH_KEY);
+      safeStorageRemove(DEMO_AUTH_KEY);
       setUser(null);
       setSession(null);
       setRole(null);

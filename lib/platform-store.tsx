@@ -7,6 +7,9 @@ import {
   type ClientProfile,
   type Gig,
   type GigStatus,
+  type Message,
+  type Review,
+  type Notification,
   type Report,
   type ReportStatus,
   type User,
@@ -15,6 +18,9 @@ import {
   mockApplications,
   mockClientProfiles,
   mockGigs,
+  mockMessages,
+  mockReviews,
+  mockNotifications,
   mockReports,
   mockUsers,
   mockWorkerProfiles,
@@ -23,6 +29,7 @@ import { supabase } from '@/lib/supabase';
 import type { Database } from '@/lib/database.types';
 
 type CreateGigInput = Omit<Gig, 'id' | 'client_name' | 'status' | 'created_at' | 'updated_at'>;
+export type UpdateGigInput = Omit<CreateGigInput, 'client_id'>;
 type CreateReportInput = Pick<Report, 'reported_by' | 'reported_user_id' | 'gig_id' | 'reason' | 'description'>;
 type GigRow = Database['public']['Tables']['gigs']['Row'];
 type ApplicationRow = Database['public']['Tables']['applications']['Row'];
@@ -30,6 +37,17 @@ type UserRow = Database['public']['Tables']['users']['Row'];
 type WorkerProfileRow = Database['public']['Tables']['worker_profiles']['Row'];
 type ClientProfileRow = Database['public']['Tables']['client_profiles']['Row'];
 type ReportRow = Database['public']['Tables']['reports']['Row'];
+type MessageRow = Database['public']['Tables']['messages']['Row'];
+type NotificationRow = Database['public']['Tables']['notifications']['Row'];
+type ReviewRow = Database['public']['Tables']['reviews']['Row'];
+
+export interface CreateReviewInput {
+  gig_id: string;
+  reviewer_id: string;
+  reviewed_user_id: string;
+  rating: number;
+  comment: string;
+}
 // public.public_profiles is a DB view (see 20260528000000 migration) exposing only
 // non-sensitive columns of `users` to every authenticated user.
 type PublicProfileRow = Database['public']['Views']['public_profiles']['Row'];
@@ -41,13 +59,23 @@ interface PlatformStoreValue {
   gigs: Gig[];
   applications: Application[];
   reports: Report[];
+  messages: Message[];
+  notifications: Notification[];
+  emailNotifications: boolean;
   loading: boolean;
   isSupabaseConnected: boolean;
   createGig: (data: CreateGigInput) => Promise<Gig>;
   applyToGig: (data: { gig_id: string; worker_id: string; worker_name: string; message: string }) => Promise<Application>;
   createReport: (data: CreateReportInput) => Promise<Report>;
+  sendMessage: (data: { application_id: string; sender_id: string; body: string }) => Promise<Message>;
+  markThreadRead: (application_id: string, reader_id: string) => Promise<void>;
+  reviews: Review[];
+  addReview: (data: CreateReviewInput) => Promise<Review>;
+  markNotificationsRead: (ids: string[]) => Promise<void>;
+  setEmailNotifications: (userId: string, enabled: boolean) => Promise<void>;
   updateApplicationStatus: (id: string, status: ApplicationStatus) => Promise<void>;
   updateGigStatus: (id: string, status: GigStatus) => Promise<void>;
+  updateGig: (id: string, data: UpdateGigInput) => Promise<void>;
   updateVerificationStatus: (profileType: 'worker' | 'client', profileId: string, status: VerificationStatus) => Promise<void>;
   updateReportStatus: (id: string, status: ReportStatus) => Promise<void>;
   updateWorkerProfile: (userId: string, data: Partial<Pick<WorkerProfile, 'bio' | 'skills' | 'experience' | 'transport_available' | 'preferred_categories'>>) => Promise<void>;
@@ -189,7 +217,20 @@ function getInitialState() {
     gigs: mockGigs,
     applications: mockApplications,
     reports: mockReports,
+    messages: mockMessages,
+    notifications: mockNotifications,
+    reviews: mockReviews,
   };
+}
+
+/** Demo-mode stand-in for the database triggers in 20260601000000_notifications.sql. */
+/** Same truncation the DB triggers apply, so long names can't be used to smuggle text into notifications/emails. */
+function clip(value: string, max: number) {
+  return value.length > max ? value.slice(0, max) : value;
+}
+
+function demoNotification(input: Omit<Notification, 'id' | 'read_at' | 'created_at'>): Notification {
+  return { ...input, id: `note_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, read_at: null, created_at: new Date().toISOString() };
 }
 
 export function PlatformStoreProvider({ children }: { children: React.ReactNode }) {
@@ -199,6 +240,10 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
   const [gigs, setGigs] = useState<Gig[]>(mockGigs);
   const [applications, setApplications] = useState<Application[]>(mockApplications);
   const [reports, setReports] = useState<Report[]>(mockReports);
+  const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [reviews, setReviews] = useState<Review[]>(mockReviews);
+  const [emailNotifications, setEmailNotificationsState] = useState(true);
   const [loading, setLoading] = useState(true);
   const isSupabaseConnected = Boolean(supabase);
 
@@ -206,7 +251,7 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     if (!supabase) return;
 
     setLoading(true);
-    const [publicProfilesResult, ownUsersResult, workerProfilesResult, clientProfilesResult, gigsResult, applicationsResult, reportsResult, addressesResult] = await Promise.all([
+    const [publicProfilesResult, ownUsersResult, workerProfilesResult, clientProfilesResult, gigsResult, applicationsResult, reportsResult, addressesResult, messagesResult, notificationsResult, reviewsResult] = await Promise.all([
       // Safe for everyone: names/locations only, no email or phone (see public_profiles view).
       supabase.from('public_profiles').select('*').order('created_at', { ascending: false }).limit(1000),
       // RLS-restricted: returns only the caller's own row, or every row for admins.
@@ -218,9 +263,14 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
       supabase.from('reports').select('*').order('created_at', { ascending: false }).limit(1000),
       // Row-level security returns only addresses this user may see (own gigs, or accepted applications).
       supabase.from('gig_private_details').select('*').limit(1000),
+      // RLS: only threads the caller is a party to (or all, for admins).
+      supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(5000),
+      // RLS: only the caller's own notifications.
+      supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(200),
+      supabase.from('reviews').select('*').order('created_at', { ascending: false }).limit(2000),
     ]);
 
-    const firstError = publicProfilesResult.error ?? ownUsersResult.error ?? workerProfilesResult.error ?? clientProfilesResult.error ?? gigsResult.error ?? applicationsResult.error ?? reportsResult.error ?? addressesResult.error;
+    const firstError = publicProfilesResult.error ?? ownUsersResult.error ?? workerProfilesResult.error ?? clientProfilesResult.error ?? gigsResult.error ?? applicationsResult.error ?? reportsResult.error ?? addressesResult.error ?? messagesResult.error ?? notificationsResult.error ?? reviewsResult.error;
     if (firstError) {
       setLoading(false);
       throw firstError;
@@ -251,11 +301,20 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     setGigs(mappedGigs);
     setApplications(mappedApplications);
     setReports(mappedReports);
+    setMessages((messagesResult.data ?? []) as MessageRow[]);
+    setNotifications(((notificationsResult.data ?? []) as NotificationRow[]).map(({ emailed_at: _emailed, ...row }) => row));
+    setReviews(((reviewsResult.data ?? []) as ReviewRow[]).map((row) => ({ ...row, comment: row.comment ?? '' })));
+    // `users` is RLS-restricted to the caller's own row (admins see all; theirs is matched by auth id below).
+    const { data: authData } = await supabase.auth.getUser();
+    const me = ownUserRows.find((row) => row.id === authData.user?.id);
+    if (me && typeof me.email_notifications === 'boolean') setEmailNotificationsState(me.email_notifications);
     setLoading(false);
   }, []);
 
   useEffect(() => {
     if (supabase) {
+      // Initial load from Supabase / localStorage (external stores), then subscribe to auth changes.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadSupabaseData().catch(() => setLoading(false));
       const { data } = supabase.auth.onAuthStateChange(() => {
         loadSupabaseData().catch(() => setLoading(false));
@@ -267,12 +326,21 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     }
 
     try {
-      const stored = window.localStorage.getItem(STORE_KEY);
+      let stored: string | null = null;
+      try {
+        stored = window.localStorage.getItem(STORE_KEY);
+      } catch {
+        stored = null;
+      }
       if (stored) {
-        const parsed = JSON.parse(stored) as { gigs?: Gig[]; applications?: Application[]; reports?: Report[] };
+        const parsed = JSON.parse(stored) as { gigs?: Gig[]; applications?: Application[]; reports?: Report[]; messages?: Message[]; notifications?: Notification[]; reviews?: Review[]; emailNotifications?: boolean };
         setGigs(parsed.gigs?.length ? parsed.gigs : mockGigs);
         setApplications(parsed.applications?.length ? parsed.applications : mockApplications);
         setReports(parsed.reports?.length ? parsed.reports : mockReports);
+        setMessages(parsed.messages ?? mockMessages);
+        setReviews(parsed.reviews ?? mockReviews);
+        setNotifications(parsed.notifications ?? mockNotifications);
+        if (typeof parsed.emailNotifications === 'boolean') setEmailNotificationsState(parsed.emailNotifications);
       }
     } finally {
       setLoading(false);
@@ -281,9 +349,14 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     if (!supabase && !loading) {
-      window.localStorage.setItem(STORE_KEY, JSON.stringify({ gigs, applications, reports }));
+      try {
+        window.localStorage.setItem(STORE_KEY, JSON.stringify({ gigs, applications, reports, messages, notifications, reviews, emailNotifications }));
+      } catch (error) {
+        // Safari private mode / storage full: keep working in memory for this session.
+        console.warn('[store] Could not persist demo data:', error);
+      }
     }
-  }, [applications, gigs, loading, reports]);
+  }, [applications, emailNotifications, gigs, loading, messages, notifications, reports, reviews]);
 
   const createGig = useCallback(
     async (data: CreateGigInput) => {
@@ -378,6 +451,19 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
       };
 
       setApplications((current) => [application, ...current]);
+      if (gig) {
+        setNotifications((current) => [
+          demoNotification({
+            user_id: gig.client_id,
+            type: 'new_application',
+            title: `New applicant: ${clip(worker_name, 60)}`,
+            body: `${clip(worker_name, 60)} applied to "${clip(gig.title, 80)}".`,
+            link: `/client/gigs/${gig.id}/applications`,
+            application_id: application.id,
+          }),
+          ...current,
+        ]);
+      }
       return application;
     },
     [gigs, users],
@@ -394,7 +480,40 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
         application.id === id ? { ...application, status, updated_at: new Date().toISOString() } : application,
       ),
     );
-  }, []);
+
+    if (!supabase && (status === 'accepted' || status === 'rejected')) {
+      const application = applications.find((item) => item.id === id);
+      const gig = application ? gigs.find((item) => item.id === application.gig_id) : undefined;
+      if (application && gig) {
+        const type = status === 'accepted' ? 'application_accepted' : 'application_rejected';
+        setNotifications((current) => {
+          // Mirrors the DB unique index: each decision is notified at most once per application,
+          // so a client flipping accept/reject cannot spam the worker.
+          if (current.some((note) => note.application_id === application.id && note.type === type)) return current;
+          return [
+          status === 'accepted'
+            ? demoNotification({
+                user_id: application.worker_id,
+                type: 'application_accepted',
+                title: `You got the gig: ${clip(gig.title, 80)}`,
+                body: `${clip(gig.client_name, 60)} accepted your application. Say hello and confirm the details.`,
+                link: `/messages/${application.id}`,
+                application_id: application.id,
+              })
+            : demoNotification({
+                user_id: application.worker_id,
+                type: 'application_rejected',
+                title: `Update on ${clip(gig.title, 80)}`,
+                body: 'The client went with someone else this time. More gigs are posted every week.',
+                link: '/browse',
+                application_id: application.id,
+              }),
+          ...current,
+          ];
+        });
+      }
+    }
+  }, [applications, gigs]);
 
   const createReport = useCallback(async (data: CreateReportInput) => {
     if (supabase) {
@@ -439,6 +558,70 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
 
     setGigs((current) => current.map((gig) => (gig.id === id ? { ...gig, status, updated_at: new Date().toISOString() } : gig)));
   }, []);
+
+  const updateGig = useCallback(
+    async (id: string, data: UpdateGigInput) => {
+      const existing = gigs.find((gig) => gig.id === id);
+      if (!existing) throw new Error('This gig no longer exists.');
+      if (existing.status === 'completed' || existing.status === 'cancelled') throw new Error('Completed or cancelled gigs cannot be edited.');
+      const { address_private, ...fields } = data;
+
+      if (supabase) {
+        const { error } = await supabase.from('gigs').update(fields).eq('id', id);
+        if (error) throw error;
+        if (address_private !== existing.address_private) {
+          const { error: addressError } = await supabase.from('gig_private_details').upsert({ gig_id: id, address: address_private }, { onConflict: 'gig_id' });
+          if (addressError) throw addressError;
+        }
+        setGigs((current) => current.map((gig) => (gig.id === id ? { ...gig, ...data, updated_at: new Date().toISOString() } : gig)));
+        return;
+      }
+
+      setGigs((current) => current.map((gig) => (gig.id === id ? { ...gig, ...data, updated_at: new Date().toISOString() } : gig)));
+
+      // Mirror the DB triggers: tell pending/accepted applicants about changes that affect them.
+      const changes: string[] = [];
+      if (data.date !== existing.date) changes.push(`date is now ${data.date}`);
+      if (data.start_time !== existing.start_time || data.end_time !== existing.end_time) changes.push(`time is now ${data.start_time}–${data.end_time}`);
+      if (data.location_area !== existing.location_area) changes.push(`area is now ${clip(data.location_area, 60)}`);
+      if (data.pay_amount !== existing.pay_amount) changes.push(`pay is now R${data.pay_amount}`);
+      if (data.title !== existing.title) changes.push(`title is now "${clip(data.title, 80)}"`);
+      const addressChanged = address_private !== existing.address_private;
+      if (!changes.length && !addressChanged) return;
+
+      const affected = applications.filter((application) => application.gig_id === id && (application.status === 'pending' || application.status === 'accepted'));
+      const fresh = affected.flatMap((application) => {
+        const notes: Notification[] = [];
+        if (changes.length) {
+          notes.push(
+            demoNotification({
+              user_id: application.worker_id,
+              type: 'gig_updated',
+              title: `Gig updated: ${clip(data.title, 80)}`,
+              body: clip(`The ${changes.join('; the ')}.`, 300),
+              link: `/gigs/${id}`,
+              application_id: application.id,
+            }),
+          );
+        }
+        if (addressChanged && application.status === 'accepted') {
+          notes.push(
+            demoNotification({
+              user_id: application.worker_id,
+              type: 'gig_updated',
+              title: `Address changed: ${clip(data.title, 80)}`,
+              body: 'The client updated the private address. Open the gig to see the new one.',
+              link: `/gigs/${id}`,
+              application_id: application.id,
+            }),
+          );
+        }
+        return notes;
+      });
+      if (fresh.length) setNotifications((current) => [...fresh, ...current]);
+    },
+    [applications, gigs],
+  );
 
   const updateVerificationStatus = useCallback(async (profileType: 'worker' | 'client', profileId: string, status: VerificationStatus) => {
     if (supabase) {
@@ -488,6 +671,146 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     [],
   );
 
+  const sendMessage = useCallback(
+    async ({ application_id, sender_id, body }: { application_id: string; sender_id: string; body: string }) => {
+      const trimmed = body.trim();
+      if (!trimmed) throw new Error('Write a message first.');
+      if (trimmed.length > 2000) throw new Error('Messages are limited to 2000 characters.');
+
+      if (supabase) {
+        const { data, error } = await supabase.from('messages').insert([{ application_id, sender_id, body: trimmed }]).select('*').single();
+        if (error) throw error;
+        const message = data as MessageRow;
+        setMessages((current) => (current.some((item) => item.id === message.id) ? current : [...current, message]));
+        return message;
+      }
+
+      const application = applications.find((item) => item.id === application_id);
+      if (!application) throw new Error('This conversation no longer exists.');
+      if (application.status !== 'accepted' && application.status !== 'completed') {
+        throw new Error('Messaging opens once the application is accepted.');
+      }
+      const gig = gigs.find((item) => item.id === application.gig_id);
+      if (sender_id !== application.worker_id && sender_id !== gig?.client_id) {
+        throw new Error('Only the client and the accepted worker can message here.');
+      }
+
+      const message: Message = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        application_id,
+        sender_id,
+        body: trimmed,
+        created_at: new Date().toISOString(),
+        read_at: null,
+      };
+      setMessages((current) => [...current, message]);
+      const recipient = sender_id === application.worker_id ? gig?.client_id : application.worker_id;
+      const senderName = sender_id === application.worker_id ? application.worker_name : gig?.client_name ?? 'QuickGig user';
+      if (recipient) {
+        setNotifications((current) => [
+          demoNotification({
+            user_id: recipient,
+            type: 'new_message',
+            title: `Message from ${clip(senderName, 60)}`,
+            body: trimmed.length > 140 ? `${trimmed.slice(0, 140)}…` : trimmed,
+            link: `/messages/${application_id}`,
+            application_id,
+          }),
+          ...current,
+        ]);
+      }
+      return message;
+    },
+    [applications, gigs],
+  );
+
+  const markThreadRead = useCallback(
+    async (application_id: string, reader_id: string) => {
+      const unreadIds = messages.filter((m) => m.application_id === application_id && m.sender_id !== reader_id && !m.read_at).map((m) => m.id);
+      if (!unreadIds.length) return;
+      const now = new Date().toISOString();
+
+      if (supabase) {
+        const { error } = await supabase.from('messages').update({ read_at: now }).in('id', unreadIds);
+        if (error) throw error;
+      }
+
+      setMessages((current) => current.map((m) => (unreadIds.includes(m.id) ? { ...m, read_at: now } : m)));
+    },
+    [messages],
+  );
+
+  const markNotificationsRead = useCallback(async (ids: string[]) => {
+    if (!ids.length) return;
+    const now = new Date().toISOString();
+    if (supabase) {
+      const { error } = await supabase.from('notifications').update({ read_at: now }).in('id', ids);
+      if (error) throw error;
+    }
+    setNotifications((current) => current.map((note) => (ids.includes(note.id) && !note.read_at ? { ...note, read_at: now } : note)));
+  }, []);
+
+  const setEmailNotifications = useCallback(async (userId: string, enabled: boolean) => {
+    if (supabase) {
+      const { error } = await supabase.from('users').update({ email_notifications: enabled }).eq('id', userId);
+      if (error) throw error;
+    }
+    setEmailNotificationsState(enabled);
+  }, []);
+
+  const addReview = useCallback(
+    async ({ gig_id, reviewer_id, reviewed_user_id, rating, comment }: CreateReviewInput) => {
+      const trimmed = comment.trim();
+      if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new Error('Pick a rating from 1 to 5 stars.');
+      if (trimmed.length > 600) throw new Error('Keep the review under 600 characters.');
+
+      if (supabase) {
+        const { data, error } = await supabase
+          .from('reviews')
+          .insert([{ gig_id, reviewer_id, reviewed_user_id, rating, comment: trimmed || null }])
+          .select('*')
+          .single();
+        if (error) throw error;
+        const row = data as ReviewRow;
+        const review: Review = { ...row, comment: row.comment ?? '' };
+        setReviews((current) => [review, ...current]);
+        // The DB trigger recomputed the stored rating; refresh so profiles show it.
+        loadSupabaseData().catch(() => undefined);
+        return review;
+      }
+
+      if (reviews.some((item) => item.gig_id === gig_id && item.reviewer_id === reviewer_id && item.reviewed_user_id === reviewed_user_id)) {
+        throw new Error('You have already reviewed this person for this gig.');
+      }
+      const review: Review = { id: `review_${Date.now()}`, gig_id, reviewer_id, reviewed_user_id, rating, comment: trimmed, created_at: new Date().toISOString() };
+      const next = [review, ...reviews];
+      setReviews(next);
+
+      // Mirror the DB trigger: recompute the stored average and notify the reviewed person.
+      const theirs = next.filter((item) => item.reviewed_user_id === reviewed_user_id);
+      const average = Math.round((theirs.reduce((sum, item) => sum + item.rating, 0) / theirs.length) * 100) / 100;
+      setWorkerProfiles((current) => current.map((profile) => (profile.user_id === reviewed_user_id ? { ...profile, rating: average } : profile)));
+      setClientProfiles((current) => current.map((profile) => (profile.user_id === reviewed_user_id ? { ...profile, rating: average } : profile)));
+      const gig = gigs.find((item) => item.id === gig_id);
+      const reviewer = users.find((item) => item.id === reviewer_id);
+      const reviewerName = clip(gig && gig.client_id === reviewer_id ? gig.client_name : (reviewer?.full_name ?? 'a QuickGig user'), 60);
+      const isWorker = workerProfiles.some((profile) => profile.user_id === reviewed_user_id);
+      setNotifications((current) => [
+        demoNotification({
+          user_id: reviewed_user_id,
+          type: 'new_review',
+          title: `New ${rating}-star review from ${reviewerName}`,
+          body: trimmed ? clip(trimmed, 140) : `They rated you ${rating} out of 5 for "${clip(gig?.title ?? 'a gig', 80)}".`,
+          link: isWorker ? '/worker/profile' : '/client/profile',
+          application_id: null,
+        }),
+        ...current,
+      ]);
+      return review;
+    },
+    [gigs, loadSupabaseData, reviews, users, workerProfiles],
+  );
+
   const resetDemoData = useCallback(() => {
     if (supabase) {
       loadSupabaseData().catch(() => undefined);
@@ -501,7 +824,15 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     setGigs(initialState.gigs);
     setApplications(initialState.applications);
     setReports(initialState.reports);
-    window.localStorage.removeItem(STORE_KEY);
+    setMessages(initialState.messages);
+    setNotifications(initialState.notifications);
+    setReviews(initialState.reviews);
+    setEmailNotificationsState(true);
+    try {
+      window.localStorage.removeItem(STORE_KEY);
+    } catch {
+      /* ignore */
+    }
   }, [loadSupabaseData]);
 
   const value = useMemo(
@@ -512,13 +843,23 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
       gigs,
       applications,
       reports,
+      messages,
+      notifications,
+      reviews,
+      addReview,
+      emailNotifications,
       loading,
       isSupabaseConnected,
       createGig,
       applyToGig,
       createReport,
+      sendMessage,
+      markThreadRead,
+      markNotificationsRead,
+      setEmailNotifications,
       updateApplicationStatus,
       updateGigStatus,
+      updateGig,
       updateVerificationStatus,
       updateReportStatus,
       updateWorkerProfile,
@@ -528,6 +869,15 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
     [
       applications,
       applyToGig,
+      addReview,
+      reviews,
+      messages,
+      notifications,
+      emailNotifications,
+      sendMessage,
+      markThreadRead,
+      markNotificationsRead,
+      setEmailNotifications,
       clientProfiles,
       createGig,
       createReport,
@@ -538,6 +888,7 @@ export function PlatformStoreProvider({ children }: { children: React.ReactNode 
       resetDemoData,
       updateApplicationStatus,
       updateClientProfile,
+      updateGig,
       updateGigStatus,
       updateReportStatus,
       updateVerificationStatus,

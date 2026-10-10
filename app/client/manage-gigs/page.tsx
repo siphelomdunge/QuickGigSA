@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CheckCircle2, Lock, Plus, RotateCcw, Users } from 'lucide-react';
+import { CheckCircle2, Lock, Pencil, Plus, RotateCcw, Users } from 'lucide-react';
 import { AuthGate } from '@/components/auth-gate';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -17,14 +17,14 @@ export default function ManageGigsPage() {
   return (
     <AuthGate allowedRoles={['client']}>
       <div className="space-y-8">
-        <section className="rounded-[1.25rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+        <section className="page-hero p-6 sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-secondary">Client workspace</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">Manage gigs</h1>
+              <p className="eyebrow">Client workspace</p>
+              <h1 className="mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">Manage gigs</h1>
               <p className="mt-3 text-slate-600">Review active posts, applicants, and completed work.</p>
             </div>
-            <Link href="/client/post-gig" className="inline-flex items-center justify-center gap-2 rounded-full bg-secondary px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-500">
+            <Link href="/client/post-gig" className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-secondary-500 to-secondary-600 px-5 py-3 text-sm font-semibold text-white shadow-glow-orange ring-1 ring-inset ring-white/20 transition hover:shadow-lift">
               <Plus className="h-4 w-4" />
               Post gig
             </Link>
@@ -39,7 +39,7 @@ export default function ManageGigsPage() {
               const completedCount = applications.filter((application) => application.gig_id === gig.id && application.status === 'completed').length;
               const canComplete = acceptedCount > 0 || completedCount > 0;
               return (
-                <article key={gig.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-5 shadow-soft">
+                <article key={gig.id} className="panel-sm p-5">
                   <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
@@ -56,6 +56,12 @@ export default function ManageGigsPage() {
                         {applicantCount} application{applicantCount === 1 ? '' : 's'}
                       </Link>
                       <div className="flex flex-wrap gap-2">
+                        {gig.status === 'completed' || gig.status === 'cancelled' ? null : (
+                          <Link href={`/client/gigs/${gig.id}/edit`} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                            <Pencil className="h-4 w-4" />
+                            Edit
+                          </Link>
+                        )}
                         {gig.status === 'open' ? (
                           <Button variant="outline" onClick={() => updateGigStatus(gig.id, 'closed')} className="gap-2">
                             <Lock className="h-4 w-4" />
@@ -89,7 +95,7 @@ export default function ManageGigsPage() {
               title="No gigs posted yet"
               description="Create your first local gig and start receiving applications from nearby workers."
               action={
-                <Link href="/client/post-gig" className="rounded-full bg-secondary px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-500">
+                <Link href="/client/post-gig" className="rounded-full bg-gradient-to-b from-secondary-500 to-secondary-600 px-5 py-3 text-sm font-semibold text-white shadow-glow-orange ring-1 ring-inset ring-white/20 transition hover:shadow-lift">
                   Post a gig
                 </Link>
               }

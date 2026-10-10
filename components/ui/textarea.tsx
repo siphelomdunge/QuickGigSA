@@ -3,19 +3,17 @@ import { cn } from '@/lib/utils';
 
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label: string;
+  hint?: string;
 }
 
-export function Textarea({ label, className, ...props }: TextareaProps) {
+export function Textarea({ label, hint, className, ...props }: TextareaProps) {
   return (
-    <label className="space-y-2 text-sm font-medium text-slate-700">
-      <span>{label}</span>
-      <textarea
-        className={cn(
-          'w-full resize-none rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/10',
-          className,
-        )}
-        {...props}
-      />
+    <label className="block space-y-2 text-sm font-medium text-slate-700">
+      <span className="flex items-baseline justify-between gap-3">
+        <span>{label}</span>
+        {hint ? <span className="text-xs font-normal text-slate-400">{hint}</span> : null}
+      </span>
+      <textarea className={cn('field resize-y leading-6', className)} {...props} />
     </label>
   );
 }

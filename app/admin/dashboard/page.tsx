@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BriefcaseBusiness, FileWarning, ShieldCheck, Users } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, FileWarning, ShieldCheck, Users } from 'lucide-react';
 import { AuthGate } from '@/components/auth-gate';
 import { StatCard } from '@/components/ui/stat-card';
 import { usePlatformStore } from '@/lib/platform-store';
@@ -13,21 +13,21 @@ export default function AdminDashboardPage() {
   return (
     <AuthGate allowedRoles={['admin']}>
       <div className="space-y-8">
-        <section className="rounded-[1.25rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+        <section className="page-hero p-6 sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-secondary">Admin overview</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">Platform operations</h1>
+              <p className="eyebrow">Admin overview</p>
+              <h1 className="mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">Platform operations</h1>
             </div>
-            <Link href="/admin/users" className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-600">
+            <Link href="/admin/users" className="rounded-full bg-gradient-to-b from-secondary-500 to-secondary-600 px-5 py-3 text-sm font-semibold text-white shadow-glow-orange ring-1 ring-inset ring-white/20 transition hover:shadow-lift">
               Manage users
             </Link>
           </div>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Users" value={users.length} icon={Users} />
-            <StatCard label="Gigs" value={gigs.length} icon={ShieldCheck} />
-            <StatCard label="Applications" value={applications.length} icon={FileWarning} />
-            <StatCard label="Verification" value={pendingVerification} icon={BriefcaseBusiness} />
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <StatCard label="Users" value={users.length} icon={Users} tone="blue" />
+            <StatCard label="Gigs" value={gigs.length} icon={ShieldCheck} tone="green" />
+            <StatCard label="Applications" value={applications.length} icon={FileWarning} tone="slate" />
+            <StatCard label="Verification" value={pendingVerification} icon={BriefcaseBusiness} tone="orange" hint="pending review" />
           </div>
         </section>
 
@@ -38,10 +38,13 @@ export default function AdminDashboardPage() {
             { href: '/admin/verification', eyebrow: 'Verification', title: 'Approve profile reviews', meta: `${pendingVerification} waiting` },
             { href: '/admin/reports', eyebrow: 'Reports', title: 'Track safety reports', meta: `${reports.filter((report) => report.status !== 'resolved').length} active` },
           ].map((item) => (
-            <Link key={item.href} href={item.href} className="rounded-[1.25rem] border border-slate-200 bg-white p-6 shadow-soft transition hover:border-primary">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-secondary">{item.eyebrow}</p>
-              <p className="mt-4 text-2xl font-semibold text-slate-900">{item.title}</p>
-              <p className="mt-3 text-sm text-slate-500">{item.meta}</p>
+            <Link key={item.href} href={item.href} className="group panel-sm p-6">
+              <p className="eyebrow">{item.eyebrow}</p>
+              <p className="mt-4 font-display text-2xl font-semibold text-slate-900 transition group-hover:text-primary-700">{item.title}</p>
+              <p className="mt-3 inline-flex items-center gap-2 text-sm text-slate-500">
+                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-700">{item.meta}</span>
+                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+              </p>
             </Link>
           ))}
         </div>

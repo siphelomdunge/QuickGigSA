@@ -80,7 +80,7 @@ function ResetPasswordForm() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
-      <section className="rounded-[1.25rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+      <section className="page-hero p-6 sm:p-8">
         <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Reset password</h1>
         <p className="mt-3 text-slate-600">Create a new password for your QuickGig SA account.</p>
 
@@ -121,7 +121,7 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto max-w-2xl rounded-[1.25rem] border border-slate-200 bg-white p-8 text-center shadow-soft">
+        <div className="mx-auto max-w-2xl panel p-8 text-center">
           <p className="text-lg font-semibold text-slate-900">Loading recovery link...</p>
           <p className="mt-2 text-sm text-slate-600">Please wait while we prepare your password reset.</p>
         </div>

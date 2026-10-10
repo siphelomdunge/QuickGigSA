@@ -16,6 +16,7 @@ export interface Database {
           updated_at: string;
           accepted_terms_at: string | null;
           terms_version: string | null;
+          email_notifications: boolean;
         };
         Insert: {
           id: string;
@@ -29,6 +30,7 @@ export interface Database {
           updated_at?: string;
           accepted_terms_at?: string | null;
           terms_version?: string | null;
+          email_notifications?: boolean;
         };
         Update: Partial<Database['public']['Tables']['users']['Insert']>;
       };
@@ -158,6 +160,41 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database['public']['Tables']['applications']['Insert']>;
+      };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: 'new_application' | 'application_accepted' | 'application_rejected' | 'new_message' | 'new_review' | 'gig_updated';
+          title: string;
+          body: string;
+          link: string;
+          application_id: string | null;
+          read_at: string | null;
+          emailed_at: string | null;
+          created_at: string;
+        };
+        Insert: never;
+        Update: { read_at?: string | null };
+      };
+      messages: {
+        Row: {
+          id: string;
+          application_id: string;
+          sender_id: string;
+          body: string;
+          created_at: string;
+          read_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          application_id: string;
+          sender_id: string;
+          body: string;
+          created_at?: string;
+          read_at?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['messages']['Insert']>;
       };
       reviews: {
         Row: {

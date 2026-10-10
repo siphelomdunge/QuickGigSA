@@ -68,7 +68,7 @@ function SectionHeader({ eyebrow, title, description }: { eyebrow: string; title
   return (
     <FadeUp className="mx-auto max-w-3xl text-center">
       <p className="text-sm font-semibold uppercase text-primary">{eyebrow}</p>
-      <h2 className="mt-3 text-3xl font-semibold text-slate-950 sm:text-4xl">{title}</h2>
+      <h2 className="mt-3 text-2xl font-semibold text-slate-950 sm:text-4xl">{title}</h2>
       <p className="mt-4 leading-7 text-slate-600">{description}</p>
     </FadeUp>
   );
@@ -78,14 +78,14 @@ function StepCard({ step, index }: { step: (typeof steps)[number]; index: number
   const Icon = step.icon;
   return (
     <FadeUp delay={index * 120}>
-      <GlassCard className="lift-card h-full p-6">
+      <GlassCard className="lift-card h-full p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-blue-500 text-white shadow-glow-blue">
             <Icon className="h-6 w-6" />
           </div>
           <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-primary shadow-sm">0{index + 1}</span>
         </div>
-        <h3 className="mt-6 text-xl font-semibold text-slate-950">{step.title}</h3>
+        <h3 className="mt-4 text-lg font-semibold text-slate-950 sm:mt-6 sm:text-xl">{step.title}</h3>
         <p className="mt-3 leading-7 text-slate-600">{step.description}</p>
       </GlassCard>
     </FadeUp>
@@ -132,11 +132,11 @@ function FloatingCard({ children, className = '', rotate = '0deg', delay = 0 }: 
 
 function HeroVisual() {
   return (
-    <div className="relative mx-auto min-h-[460px] w-full max-w-xl overflow-visible px-2 py-8 sm:min-h-[520px]">
-      <div className="absolute inset-8 rounded-[2rem] bg-gradient-to-br from-primary/12 via-white/50 to-accent/12 shadow-glow-blue" />
-      <div className="absolute inset-x-10 top-16 h-40 skew-y-6 rounded-[2rem] bg-gradient-to-r from-primary/12 via-secondary/10 to-accent/12 blur-xl" />
+    <div className="relative mx-auto w-full max-w-xl overflow-visible px-2 py-2 sm:min-h-[520px] sm:py-8">
+      <div className="absolute inset-8 hidden rounded-[2rem] bg-gradient-to-br from-primary/12 via-white/50 to-accent/12 shadow-glow-blue dark:via-white/5 sm:block" />
+      <div className="absolute inset-x-10 top-16 hidden h-40 skew-y-6 rounded-[2rem] bg-gradient-to-r from-primary/12 via-secondary/10 to-accent/12 blur-xl sm:block" />
 
-      <FloatingCard className="absolute left-1 top-8 z-20 w-44 sm:left-0 sm:top-12" rotate="-5deg" delay={200}>
+      <FloatingCard className="absolute left-1 top-8 z-20 hidden w-44 sm:left-0 sm:top-12 sm:block" rotate="-5deg" delay={200}>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Zap className="h-5 w-5" />
@@ -148,7 +148,7 @@ function HeroVisual() {
         </div>
       </FloatingCard>
 
-      <FloatingCard className="absolute right-0 top-24 z-20 w-44 sm:right-4" rotate="4deg" delay={650}>
+      <FloatingCard className="absolute right-0 top-24 z-20 hidden w-44 sm:right-4 sm:block" rotate="4deg" delay={650}>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-green-700">
             <BadgeCheck className="h-5 w-5" />
@@ -160,11 +160,11 @@ function HeroVisual() {
         </div>
       </FloatingCard>
 
-      <div className="absolute left-1/2 top-36 z-10 w-[88%] max-w-sm -translate-x-1/2 rotate-[-2deg] transform-gpu rounded-[2rem] border border-white/80 bg-white/85 p-6 shadow-premium backdrop-blur-xl transition duration-300 hover:-translate-y-2 hover:rotate-0 sm:top-40">
+      <div className="relative z-10 mx-auto w-full max-w-sm sm:absolute sm:left-1/2 sm:top-36 sm:w-[88%] sm:-translate-x-1/2 sm:rotate-[-2deg] transform-gpu rounded-[2rem] border border-white/80 bg-white/85 p-6 shadow-premium backdrop-blur-xl transition duration-300 hover:-translate-y-2 hover:rotate-0 sm:top-40">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase text-secondary">Featured gig</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-950">Event Assistant</h3>
+            <p className="text-xs font-semibold uppercase text-orange-700">Featured gig</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-950">Event Assistant</p>
           </div>
           <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-green-700">Open</span>
         </div>
@@ -174,7 +174,7 @@ function HeroVisual() {
             <span className="text-sm font-medium text-slate-700">Cape Town CBD</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-blue-50 p-4">
+            <div className="rounded-2xl bg-primary-50 p-4">
               <Wallet className="h-5 w-5 text-primary" />
               <p className="mt-2 text-xl font-semibold text-slate-950">R450</p>
             </div>
@@ -189,7 +189,7 @@ function HeroVisual() {
         </Link>
       </div>
 
-      <FloatingCard className="absolute bottom-16 left-8 z-20 w-40 sm:bottom-20" rotate="3deg" delay={900}>
+      <FloatingCard className="absolute bottom-16 left-8 z-20 hidden w-40 sm:bottom-20 sm:block" rotate="3deg" delay={900}>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary/10 text-secondary">
             <Wallet className="h-5 w-5" />
@@ -201,7 +201,7 @@ function HeroVisual() {
         </div>
       </FloatingCard>
 
-      <div className="absolute bottom-8 right-6 z-10 rounded-[1.5rem] border border-white/80 bg-slate-950 p-4 text-white shadow-premium">
+      <div className="absolute bottom-8 right-6 z-10 hidden rounded-[1.5rem] border border-white/80 bg-slate-950 p-4 text-white shadow-premium sm:block">
         <div className="flex items-center gap-2">
           <Star className="h-4 w-4 fill-secondary text-secondary" />
           <span className="text-sm font-semibold">4.8 rating</span>
@@ -214,30 +214,41 @@ function HeroVisual() {
 export default function HomePage() {
   return (
     <div className="relative overflow-hidden pb-8">
-      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[720px] bg-[linear-gradient(120deg,rgba(37,99,235,0.12),rgba(255,255,255,0.28),rgba(34,197,94,0.10))]" />
-      <div className="pointer-events-none absolute inset-x-0 top-20 -z-10 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
-      <section className="grid min-h-[calc(100vh-120px)] gap-10 py-8 lg:grid-cols-[1fr_0.92fr] lg:items-center lg:py-12">
+      <section className="grid gap-8 py-4 sm:py-8 lg:min-h-[calc(100vh-120px)] lg:grid-cols-[1fr_0.92fr] lg:items-center lg:py-12">
         <FadeUp className="max-w-3xl">
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white/75 px-4 py-2 text-sm font-semibold text-primary shadow-sm backdrop-blur">
             <ShieldCheck className="h-4 w-4" />
             Built for South African youth
           </span>
-          <h1 className="mt-6 text-5xl font-semibold leading-tight text-slate-950 sm:text-6xl lg:text-7xl">
-            Find local gigs. Earn faster. Build your profile.
+          <h1 className="mt-5 text-4xl font-semibold leading-[1.08] text-slate-950 sm:text-6xl lg:text-7xl">
+            Find local gigs. <span className="text-gradient">Earn faster.</span> Build your profile.
           </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+          <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:mt-6 sm:text-lg sm:leading-8">
             QuickGig SA connects students, freelancers, and local workers with trusted short-term gigs nearby.
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/browse" className="inline-flex min-h-12 items-center justify-center rounded-full bg-primary px-7 py-3 text-base font-semibold text-white shadow-glow-blue transition hover:-translate-y-0.5 hover:bg-blue-600">
+          <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row">
+            <Link href="/browse" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-secondary-500 to-secondary-600 px-7 py-3 text-base font-semibold text-white shadow-glow-orange ring-1 ring-inset ring-white/20 transition hover:-translate-y-0.5 hover:shadow-lift">
               Browse gigs
+              <ArrowRight className="h-4 w-4" />
             </Link>
             <Link href="/client/post-gig" className="inline-flex min-h-12 items-center justify-center rounded-full border border-slate-200 bg-white/85 px-7 py-3 text-base font-semibold text-slate-800 shadow-soft backdrop-blur transition hover:-translate-y-0.5 hover:border-secondary/40">
               Post a gig
             </Link>
           </div>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-6 grid max-w-md grid-cols-3 sm:mt-10 divide-x divide-slate-200 rounded-2xl border border-slate-200/80 bg-white/70 shadow-soft backdrop-blur">
+            {[
+              { value: '8', label: 'categories' },
+              { value: 'R0', label: 'worker fees' },
+              { value: '<1 min', label: 'to apply' },
+            ].map((stat) => (
+              <div key={stat.label} className="px-4 py-3 text-center">
+                <p className="font-display text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">{stat.value}</p>
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 flex flex-wrap gap-3">
             {trustItems.map((item) => (
               <span key={item} className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur">
                 <CheckCircle2 className="h-4 w-4 text-accent" />
@@ -252,37 +263,37 @@ export default function HomePage() {
         </FadeUp>
       </section>
 
-      <section className="py-14">
+      <section className="py-8 sm:py-14">
         <SectionHeader
           eyebrow="How it works"
           title="Start local work in three simple moves."
           description="QuickGig SA keeps posting, applying, and reviewing lightweight enough for busy students, small businesses, and local teams."
         />
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
+        <div className="mt-6 grid gap-4 sm:mt-10 sm:gap-5 md:grid-cols-3">
           {steps.map((step, index) => (
             <StepCard key={step.title} step={step} index={index} />
           ))}
         </div>
       </section>
 
-      <section className="py-14">
+      <section className="py-8 sm:py-14">
         <SectionHeader
           eyebrow="Popular categories"
           title="Gigs built around real local demand."
           description="From events to tutoring, workers can find practical short-term opportunities and clients can fill small jobs quickly."
         />
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid gap-4 sm:mt-10 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((category, index) => (
             <CategoryCard key={category.title} category={category} index={index} />
           ))}
         </div>
       </section>
 
-      <section className="grid gap-8 py-14 lg:grid-cols-[1fr_0.86fr] lg:items-center">
+      <section className="grid gap-8 py-8 sm:py-14 lg:grid-cols-[1fr_0.86fr] lg:items-center">
         <FadeUp>
           <div className="space-y-5">
             <p className="text-sm font-semibold uppercase text-primary">Safety first</p>
-            <h2 className="text-3xl font-semibold text-slate-950 sm:text-4xl">Built for safe local connections</h2>
+            <h2 className="text-2xl font-semibold text-slate-950 sm:text-4xl">Built for safe local connections</h2>
             <p className="max-w-2xl leading-8 text-slate-600">
               The marketplace is designed around visibility, verification, and clear application tracking so clients and independent workers can connect with more confidence.
             </p>
@@ -310,7 +321,7 @@ export default function HomePage() {
                     <p className="text-sm text-white/70">Student worker</p>
                   </div>
                 </div>
-                <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-slate-950">Verified</span>
+                <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-black">Verified</span>
               </div>
               <div className="mt-6 grid gap-3">
                 <div className="rounded-2xl bg-white/10 p-4">
@@ -330,13 +341,13 @@ export default function HomePage() {
         </FadeUp>
       </section>
 
-      <section className="py-14">
+      <section className="py-8 sm:py-14">
         <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary via-blue-600 to-slate-950 p-6 text-white shadow-premium sm:p-10 lg:p-12">
           <div className="absolute inset-x-0 top-0 h-px bg-white/40" />
           <div className="relative z-10 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
               <p className="text-sm font-semibold uppercase text-blue-100">Ready when you are</p>
-              <h2 className="mt-3 text-3xl font-semibold sm:text-5xl">Ready to find your next gig?</h2>
+              <h2 className="mt-3 text-2xl font-semibold sm:text-5xl">Ready to find your next gig?</h2>
               <p className="mt-4 max-w-2xl leading-7 text-blue-50">
                 Join as a worker to apply nearby, or post a short-term gig for local help today.
               </p>

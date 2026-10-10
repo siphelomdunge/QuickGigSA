@@ -13,7 +13,7 @@ export default function AdminGigsPage() {
   return (
     <AuthGate allowedRoles={['admin']}>
       <div className="space-y-8">
-        <section className="rounded-[1.25rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+        <section className="page-hero p-6 sm:p-8">
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Gigs</h1>
           <p className="mt-3 max-w-2xl text-slate-600">View every gig posted on the platform and check status details.</p>
         </section>
@@ -22,7 +22,7 @@ export default function AdminGigsPage() {
             gigs.map((gig) => {
               const applicationCount = applications.filter((application) => application.gig_id === gig.id).length;
               return (
-                <article key={gig.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-5 shadow-soft">
+                <article key={gig.id} className="panel-sm p-5">
                   <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">

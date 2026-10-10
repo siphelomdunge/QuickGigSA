@@ -76,6 +76,29 @@ export interface Application {
   updated_at: string;
 }
 
+export interface Message {
+  id: string;
+  application_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+  read_at: string | null;
+}
+
+export type NotificationType = 'new_application' | 'application_accepted' | 'application_rejected' | 'new_message' | 'new_review' | 'gig_updated';
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  link: string;
+  application_id: string | null;
+  read_at: string | null;
+  created_at: string;
+}
+
 export interface Report {
   id: string;
   reported_by: string;
@@ -358,6 +381,62 @@ export const mockApplications: Application[] = [
   },
 ];
 
+// app_2: Anele (user_1) accepted by Khumalo Eats (user_2) for the delivery runner gig.
+export const mockMessages: Message[] = [
+  {
+    id: 'msg_1',
+    application_id: 'app_2',
+    sender_id: 'user_2',
+    body: 'Hi Anele, thanks for applying! Please meet at the back entrance on Long Street at 08:45 so we can load the parcels.',
+    created_at: '2026-05-29T09:15:00.000Z',
+    read_at: '2026-05-29T09:40:00.000Z',
+  },
+  {
+    id: 'msg_2',
+    application_id: 'app_2',
+    sender_id: 'user_1',
+    body: 'Perfect, I will be there. Do I need my own bag for the parcels?',
+    created_at: '2026-05-29T09:42:00.000Z',
+    read_at: null,
+  },
+];
+
+export const mockNotifications: Notification[] = [
+  {
+    id: 'note_1',
+    user_id: 'user_2',
+    type: 'new_application',
+    title: 'New applicant: Thandi Jacobs',
+    body: 'Thandi Jacobs applied to "Event assistant for food stall".',
+    link: '/client/gigs/gig_1/applications',
+    application_id: 'app_1',
+    read_at: null,
+    created_at: '2026-05-28T14:05:00.000Z',
+  },
+  {
+    id: 'note_2',
+    user_id: 'user_1',
+    type: 'application_accepted',
+    title: 'You got the gig: Delivery runner for quick packages',
+    body: 'Khumalo Eats accepted your application. Say hello and confirm the details.',
+    link: '/messages/app_2',
+    application_id: 'app_2',
+    read_at: '2026-05-29T09:00:00.000Z',
+    created_at: '2026-05-29T08:30:00.000Z',
+  },
+  {
+    id: 'note_3',
+    user_id: 'user_2',
+    type: 'new_message',
+    title: 'Message from Anele Mpofu',
+    body: 'Perfect, I will be there. Do I need my own bag for the parcels?',
+    link: '/messages/app_2',
+    application_id: 'app_2',
+    read_at: null,
+    created_at: '2026-05-29T09:42:00.000Z',
+  },
+];
+
 export const mockReports: Report[] = [
   {
     id: 'report_1',
@@ -379,6 +458,15 @@ export const mockReviews: Review[] = [
     reviewed_user_id: 'user_1',
     rating: 5,
     comment: 'Arrived early and completed the setup checklist carefully.',
+    created_at: '2026-05-25',
+  },
+  {
+    id: 'review_2',
+    gig_id: 'gig_5',
+    reviewer_id: 'user_1',
+    reviewed_user_id: 'user_5',
+    rating: 4,
+    comment: 'Clear instructions and paid on the day as agreed.',
     created_at: '2026-05-25',
   },
 ];

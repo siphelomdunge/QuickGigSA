@@ -1,21 +1,38 @@
 'use client';
 
+import { use, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Check, CheckCircle2, MapPin, Star, X } from 'lucide-react';
+import { Check, CheckCircle2, MapPin, MessageSquare, Pencil, Star, X } from 'lucide-react';
 import { AuthGate } from '@/components/auth-gate';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { usePlatformStore } from '@/lib/platform-store';
+import { RatingInline } from '@/components/reviews-section';
+import { ReviewButton } from '@/components/review-dialog';
+import { canReview } from '@/lib/reviews';
+import { workerCompleteness } from '@/lib/profile-completeness';
 
 interface ApplicationsPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default function ClientGigApplicationsPage({ params }: ApplicationsPageProps) {
-  const { gigs, applications, users, workerProfiles, updateApplicationStatus } = usePlatformStore();
-  const gig = gigs.find((item) => item.id === params.id);
-  const gigApplications = applications.filter((application) => application.gig_id === params.id);
+  const { id } = use(params);
+  const { gigs, applications, users, workerProfiles, notifications, updateApplicationStatus, markNotificationsRead } = usePlatformStore();
+
+  // Opening the applicants list clears "new application" notifications for this gig.
+  const gigApplicationIds = useMemo(() => new Set(applications.filter((application) => application.gig_id === id).map((application) => application.id)), [applications, id]);
+  const unreadNoteKey = notifications
+    .filter((note) => note.type === 'new_application' && !note.read_at && note.application_id && gigApplicationIds.has(note.application_id))
+    .map((note) => note.id)
+    .join(',');
+  useEffect(() => {
+    if (!unreadNoteKey) return;
+    markNotificationsRead(unreadNoteKey.split(',')).catch(() => undefined);
+  }, [markNotificationsRead, unreadNoteKey]);
+  const gig = gigs.find((item) => item.id === id);
+  const gigApplications = applications.filter((application) => application.gig_id === id);
 
   if (!gig) {
     return (
@@ -28,14 +45,22 @@ export default function ClientGigApplicationsPage({ params }: ApplicationsPagePr
   return (
     <AuthGate allowedRoles={['client']}>
       <div className="space-y-8">
-        <section className="rounded-[1.25rem] border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+        <section className="page-hero p-6 sm:p-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-secondary">Applications</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">{gig.title}</h1>
+              <p className="eyebrow">Applications</p>
+              <h1 className="mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">{gig.title}</h1>
               <p className="mt-3 max-w-2xl text-slate-600">Review applicants and accept or reject each worker request.</p>
             </div>
-            <StatusBadge status={gig.status} />
+            <div className="flex flex-wrap items-center gap-3">
+              <StatusBadge status={gig.status} />
+              {gig.status === 'completed' || gig.status === 'cancelled' ? null : (
+                <Link href={`/client/gigs/${gig.id}/edit`} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                  <Pencil className="h-4 w-4" />
+                  Edit gig
+                </Link>
+              )}
+            </div>
           </div>
         </section>
 
@@ -47,13 +72,17 @@ export default function ClientGigApplicationsPage({ params }: ApplicationsPagePr
               const skills = profile?.skills ?? [];
 
               return (
-                <article key={application.id} className="rounded-[1.25rem] border border-slate-200 bg-white p-5 shadow-soft">
+                <article key={application.id} className="panel-sm p-5">
                   <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                     <div className="space-y-4">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-lg font-semibold text-slate-900">{profile?.full_name ?? worker?.full_name ?? application.worker_name}</p>
                         <StatusBadge status={application.status} />
                         <StatusBadge status={profile?.verification_status ?? 'unverified'} />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                        <RatingInline userId={application.worker_id} />
+                        <span className="text-xs font-medium text-slate-500">Profile {workerCompleteness(profile).percent}% complete</span>
                       </div>
 
                       <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
@@ -86,14 +115,27 @@ export default function ClientGigApplicationsPage({ params }: ApplicationsPagePr
                     </div>
 
                     <div className="flex flex-col gap-3 sm:flex-row xl:flex-col">
-                      <Button variant="secondary" className="gap-2" onClick={() => updateApplicationStatus(application.id, 'accepted')}>
-                        <Check className="h-4 w-4" />
-                        Accept
-                      </Button>
-                      <Button variant="outline" className="gap-2" onClick={() => updateApplicationStatus(application.id, 'rejected')}>
-                        <X className="h-4 w-4" />
-                        Reject
-                      </Button>
+                      {application.status === 'accepted' || application.status === 'completed' ? (
+                        <Link
+                          href={`/messages/${application.id}`}
+                          className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-secondary-500 to-secondary-600 px-5 py-3 text-sm font-semibold text-white shadow-glow-orange ring-1 ring-inset ring-white/20 transition hover:shadow-lift"
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          Message worker
+                        </Link>
+                      ) : null}
+                      {application.status === 'pending' ? (
+                        <>
+                          <Button className="gap-2" onClick={() => updateApplicationStatus(application.id, 'accepted')}>
+                            <Check className="h-4 w-4" />
+                            Accept
+                          </Button>
+                          <Button variant="outline" className="gap-2" onClick={() => updateApplicationStatus(application.id, 'rejected')}>
+                            <X className="h-4 w-4" />
+                            Reject
+                          </Button>
+                        </>
+                      ) : null}
                       <Button
                         variant="outline"
                         className="gap-2"
@@ -104,6 +146,9 @@ export default function ClientGigApplicationsPage({ params }: ApplicationsPagePr
                         <CheckCircle2 className="h-4 w-4" />
                         Complete
                       </Button>
+                      {canReview(application) ? (
+                        <ReviewButton gigId={application.gig_id} gigTitle={gig.title} userId={application.worker_id} userName={profile?.full_name ?? worker?.full_name ?? application.worker_name} size="md" />
+                      ) : null}
                     </div>
                   </div>
                 </article>

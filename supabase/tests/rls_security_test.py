@@ -214,6 +214,156 @@ check("A worker cannot post a gig", blocked(r))
 r = attempt(worker3, ("insert into public.applications (gig_id, worker_id, message) values (%s, %s, 'hi')", (str(gig), str(worker3))))
 check("A worker can apply to an open gig", not blocked(r) and r == 1, str(r))
 
+# ---- 7. messaging -----------------------------------------------------------------------------
+if not BASELINE:
+    accepted_app = admin("select id from public.applications where worker_id = %s", (str(worker1),))[0][0]  # accepted
+    pending_app = admin("select id from public.applications where worker_id = %s", (str(worker2),))[0][0]   # pending
+
+    def send(user, app, body="hello", as_user=None):
+        return attempt(user, ("insert into public.messages (application_id, sender_id, body) values (%s, %s, %s)",
+                              (str(app), str(as_user or user), body)))
+
+    def read(user, app):
+        return attempt(user, ("select body from public.messages where application_id = %s", (str(app),)))
+
+    check("Accepted worker can message the client", not blocked(send(worker1, accepted_app)) and send(worker1, accepted_app) == 1)
+    check("Gig owner can message the accepted worker", not blocked(send(client1, accepted_app)) and send(client1, accepted_app) == 1)
+    check("Pending applicant cannot message before acceptance", blocked(send(worker2, pending_app)))
+    check("Client cannot message a pending applicant", blocked(send(client1, pending_app)))
+    check("Unrelated worker cannot message on someone else's application", blocked(send(worker3, accepted_app)))
+    check("Another client cannot message on someone else's application", blocked(send(client2, accepted_app)))
+    check("Nobody can forge the sender", blocked(send(worker1, accepted_app, as_user=client1)))
+    check("Logged-out visitor cannot message", blocked(send(None, accepted_app, as_user=worker1)))
+    check("Empty messages are rejected", blocked(send(worker1, accepted_app, body="   ")))
+    check("Oversized messages are rejected", blocked(send(worker1, accepted_app, body="x" * 2001)))
+
+    msg = uuid.uuid4()
+    admin("insert into public.messages (id, application_id, sender_id, body) values (%s, %s, %s, 'secret plan')",
+          (str(msg), str(accepted_app), str(worker1)))
+    check("Both participants can read the thread", read(worker1, accepted_app) == [("secret plan",)] and read(client1, accepted_app) == [("secret plan",)])
+    check("Admin can read the thread (moderation)", read(boss, accepted_app) == [("secret plan",)])
+    check("Admin cannot write into a thread", blocked(send(boss, accepted_app)))
+    check("Unrelated users cannot read the thread", (blocked(read(worker3, accepted_app)) or read(worker3, accepted_app) == [])
+          and (blocked(read(client2, accepted_app)) or read(client2, accepted_app) == []))
+    check("Logged-out visitors cannot read messages", blocked(read(None, accepted_app)) or read(None, accepted_app) == [])
+
+    r = attempt(worker1, ("update public.messages set body = 'edited' where id = %s", (str(msg),)),
+                "select body from public.messages where id = '%s'" % msg)
+    check("The sender cannot edit a sent message", blocked(r) or r[0][0] == "secret plan")
+    r = attempt(client1, ("update public.messages set body = 'edited' where id = %s", (str(msg),)),
+                "select body from public.messages where id = '%s'" % msg)
+    check("The recipient cannot edit a message either", blocked(r) or r[0][0] == "secret plan")
+    r = attempt(client1, ("update public.messages set read_at = now() where id = %s", (str(msg),)))
+    check("The recipient can mark a message read", not blocked(r) and r == 1, str(r))
+    r = attempt(worker1, ("update public.messages set read_at = now() where id = %s", (str(msg),)))
+    check("The sender cannot mark their own message read", blocked(r) or r == 0)
+    r = attempt(worker1, ("delete from public.messages where id = %s", (str(msg),)))
+    check("Messages cannot be deleted by users", blocked(r) or r == 0)
+
+# ---- 8. notifications -------------------------------------------------------------------------
+if not BASELINE:
+    def notes(user, where="", params=()):
+        return attempt(user, ("select type::text, user_id::text from public.notifications " + where, params))
+
+    # The accepted worker's message earlier created a new_message notification for the client, and
+    # worker3's application in section 6 was rolled back, so create a fresh one here for a clean check.
+    fresh_gig = uuid.uuid4()
+    admin("""insert into public.gigs (id, client_id, title, description, category, location_area, date, start_time, end_time, pay_amount)
+             values (%s, %s, 'Paint', 'Paint a wall', 'Home', 'Langa', '2026-12-05', '09:00', '12:00', 300)""", (str(fresh_gig), str(client2)))
+    admin("insert into public.applications (gig_id, worker_id, message) values (%s, %s, 'me please')", (str(fresh_gig), str(worker3)))
+    fresh_app = admin("select id from public.applications where gig_id = %s", (str(fresh_gig),))[0][0]
+
+    r = notes(client2, "where application_id = %s", (str(fresh_app),))
+    check("Applying notifies the gig owner", not blocked(r) and r == [("new_application", str(client2))], str(r))
+    check("The applicant cannot see the owner's notification", notes(worker3, "where application_id = %s", (str(fresh_app),)) == [])
+
+    admin("update public.applications set status = 'accepted' where id = %s", (str(fresh_app),))
+    r = notes(worker3, "where application_id = %s", (str(fresh_app),))
+    check("Acceptance notifies the worker", not blocked(r) and r == [("application_accepted", str(worker3))], str(r))
+
+    admin("insert into public.messages (application_id, sender_id, body) values (%s, %s, 'see you at 9')", (str(fresh_app), str(worker3)))
+    r = notes(client2, "where application_id = %s and type = 'new_message'", (str(fresh_app),))
+    check("A message notifies the recipient, not the sender", not blocked(r) and r == [("new_message", str(client2))]
+          and notes(worker3, "where application_id = %s and type = 'new_message'", (str(fresh_app),)) == [], str(r))
+
+    check("Users cannot read other people's notifications", notes(worker1, "where user_id = %s", (str(client2),)) == [])
+    r = attempt(worker1, ("insert into public.notifications (user_id, type, title, body, link) values (%s, 'new_message', 'x', 'y', '/')", (str(client2),)))
+    check("Users cannot forge notifications", blocked(r))
+    note_id = admin("select id from public.notifications where user_id = %s and type = 'new_message' limit 1", (str(client2),))[0][0]
+    r = attempt(client2, ("update public.notifications set read_at = now() where id = %s", (str(note_id),)))
+    check("Owner can mark a notification read", not blocked(r) and r == 1, str(r))
+    r = attempt(client2, ("update public.notifications set title = 'hacked' where id = %s", (str(note_id),)))
+    check("Owner cannot edit notification content", blocked(r))
+    r = attempt(client2, ("update public.notifications set emailed_at = now() where id = %s", (str(note_id),)))
+    check("Owner cannot fake the email-sent marker", blocked(r))
+    r = attempt(worker3, ("update public.notifications set read_at = now() where id = %s", (str(note_id),)))
+    check("Someone else cannot mark it read", blocked(r) or r == 0)
+    r = attempt(client2, ("delete from public.notifications where id = %s", (str(note_id),)))
+    check("Notifications cannot be deleted by users", blocked(r) or r == 0)
+    r = attempt(client2, ("update public.users set email_notifications = false where id = %s", (str(client2),)),
+                "select email_notifications from public.users where id = '%s'" % client2)
+    check("A user can switch off email notifications", not blocked(r) and r[0][0] is False, str(r))
+
+# ---- notification abuse limits ----------------------------------------------------------------
+if not BASELINE:
+    flip_app = admin("select id from public.applications where worker_id = %s and gig_id = %s", (str(worker2), str(gig)))[0][0]
+    flips_before = admin("select count(*) from public.notifications where user_id = %s", (str(worker2),))[0][0]
+    r = attempt(client1, *[("update public.applications set status = %s where id = %s", (st, str(flip_app))) for st in ["accepted", "rejected"] * 5])
+    check("A client can still change their decision", not blocked(r) and r == 1, str(r))
+    for st in ["accepted", "rejected"] * 5:
+        admin("update public.applications set status = %s where id = %s", (st, str(flip_app)))
+    flips_after = admin("select count(*) from public.notifications where user_id = %s", (str(worker2),))[0][0]
+    check("Flipping a decision ten times sends the worker at most two notifications", flips_after - flips_before <= 2, f"{flips_after - flips_before} created")
+
+    long_name = "URGENT: claim your R5000 prize at http://evil.example " * 5
+    spammer = signup("spammer@t.co")
+    admin("update public.users set full_name = %s where id = %s", (long_name, str(spammer)))
+    new_app = admin("insert into public.applications (gig_id, worker_id, message) values (%s, %s, 'hi') returning id", (str(gig), str(spammer)))[0][0]
+    note = admin("select title, body from public.notifications where application_id = %s and type = 'new_application'", (str(new_app),))[0]
+    check("A very long name is truncated in the notification title", len(note[0]) <= 80, f"{len(note[0])} characters")
+    check("A very long name is truncated in the notification body", len(note[1]) <= 160, f"{len(note[1])} characters")
+
+# ---- reviews & ratings --------------------------------------------------------------------------
+if not BASELINE:
+    done_gig = uuid.uuid4()
+    admin("insert into public.gigs (id, client_id, title, description, category, location_area, date, start_time, end_time, pay_amount) "
+          "values (%s, %s, 'Done gig', 'd', 'Events', 'CT', '2026-06-01', '09:00', '12:00', 200)", (str(done_gig), str(client1)))
+    admin("insert into public.applications (gig_id, worker_id, message, status) values (%s, %s, 'hi', 'completed')", (str(done_gig), str(worker1)))
+    r = attempt(client1, ("insert into public.reviews (gig_id, reviewer_id, reviewed_user_id, rating, comment) values (%s, %s, %s, 5, 'Great') returning id", (str(done_gig), str(client1), str(worker1))))
+    check("A client can review the worker on a completed gig", not blocked(r), str(r))
+    notes_before = admin("select count(*) from public.notifications where user_id = %s and type = 'new_review'", (str(worker1),))[0][0]
+    admin("insert into public.reviews (gig_id, reviewer_id, reviewed_user_id, rating, comment) values (%s, %s, %s, 4, 'Good') on conflict do nothing", (str(done_gig), str(client1), str(worker1)))
+    expected = admin("select round(avg(rating)::numeric, 2) from public.reviews where reviewed_user_id = %s", (str(worker1),))[0][0]
+    r = admin("select rating from public.worker_profiles where user_id = %s", (str(worker1),))[0][0]
+    check("The reviewed user's stored rating is recomputed from their reviews", float(r) == float(expected) and float(r) > 0, f"{r} vs {expected}")
+    r = admin("select count(*) from public.notifications where user_id = %s and type = 'new_review'", (str(worker1),))[0][0]
+    check("The reviewed user is notified", r - notes_before == 1, str(r - notes_before))
+    r = attempt(worker1, ("update public.worker_profiles set rating = 5 where user_id = %s", (str(worker1),)))
+    check("A worker still cannot set their own rating directly", blocked(r), str(r))
+    r = attempt(client1, ("insert into public.reviews (gig_id, reviewer_id, reviewed_user_id, rating, comment) values (%s, %s, %s, 1, %s)", (str(done_gig), str(client1), str(worker3), "x" * 601)))
+    check("Over-long review comments are rejected", blocked(r), str(r))
+
+# ---- gig edits ---------------------------------------------------------------------------------
+if not BASELINE:
+    before = admin("select count(*) from public.notifications where type = 'gig_updated'")[0][0]
+    r = attempt(client1, ("update public.gigs set start_time = '10:30', end_time = '13:30' where id = %s", (str(gig),)))
+    check("A client can edit their own gig", not blocked(r) and r == 1, str(r))
+    admin("update public.gigs set start_time = '10:30', end_time = '13:30' where id = %s", (str(gig),))
+    after = admin("select count(*) from public.notifications where type = 'gig_updated'")[0][0]
+    pending_or_accepted = admin("select count(*) from public.applications where gig_id = %s and status in ('pending', 'accepted')", (str(gig),))[0][0]
+    check("Pending and accepted applicants are told when the time changes", after - before == pending_or_accepted and pending_or_accepted > 0, f"{after - before} of {pending_or_accepted}")
+    before = after
+    admin("update public.gigs set description = 'same plan, clearer words' where id = %s", (str(gig),))
+    after = admin("select count(*) from public.notifications where type = 'gig_updated'")[0][0]
+    check("Wording-only edits do not notify anyone", after == before, str(after - before))
+    r = attempt(client2, ("update public.gigs set title = 'hijacked' where id = %s", (str(gig),)))
+    check("Another client cannot edit the gig", blocked(r) or r == 0, str(r))
+    r = attempt(client1, ("update public.gigs set client_id = %s where id = %s", (str(client2), str(gig))))
+    check("A client cannot hand a gig to someone else", blocked(r), str(r))
+    admin("update public.gigs set status = 'completed' where id = %s", (str(done_gig),))
+    r = attempt(client1, ("update public.gigs set title = 'too late' where id = %s", (str(done_gig),)))
+    check("A completed gig cannot be edited", blocked(r), str(r))
+
 # ---- report -----------------------------------------------------------------------------------
 width = max(len(n) for n, _, _ in results)
 print("\nMODE:", "BASELINE (without security fixes)" if BASELINE else "WITH security fixes")

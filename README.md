@@ -1,6 +1,6 @@
 # QuickGig SA
 
-A youth gig marketplace for South Africa. Clients post short-term gigs, workers apply, and admins oversee the platform. This is an MVP: the core flows work, but it has no automated UI tests yet and is not hardened for production.
+A youth gig marketplace for South Africa. Clients post short-term gigs, workers apply, and admins oversee the platform. This is an MVP: the core flows work and are covered by automated tests, but it is not yet hardened for production.
 
 **Stack:** Next.js 16 (App Router, React 19), TypeScript, Tailwind CSS, Supabase (auth, Postgres, row-level security), lucide-react.
 
@@ -8,25 +8,47 @@ A youth gig marketplace for South Africa. Clients post short-term gigs, workers 
 
 - Three roles (worker, client, admin) with role-based pages
 - Post, browse and manage gigs; apply to gigs; review applicants
+- **Messaging** between a client and a worker, one thread per accepted application, with unread counts and read receipts
+- **Dark mode** (follows the system setting; toggle in the header)
+- **Ratings & reviews**: once a gig is marked completed, the client and worker can rate each other (1–5 stars + comment, once per gig). Averages show on profiles, applicant cards and gig pages; the reviewed person is notified
+- **Post gig in three steps** — Details → When & where → Pay & requirements, with per-step validation; the same form powers editing.
+- **Edit gigs after posting** — clients can change the plan from *Manage gigs*; pending/accepted applicants get a `gig_updated` notification when the date, time, area, pay or title changes (and accepted workers when the private address changes). Completed/cancelled gigs are frozen by a DB trigger.
+- **Profile strength** meter for workers (bio, skills, experience, categories, location, verification) on the dashboard and profile; clients see the percentage on applicant cards
+- **Notifications**: a bell in the header plus optional email when someone applies, a decision is made on an application, or a message arrives (see below)
 - Supabase schema with triggers and row-level security (workers see only their own applications, clients only their own gigs)
 - Runs without Supabase on mock data and `localStorage`, so you can try it with zero setup
 - **AI gig-writing assistant** on the Post a gig page (see below)
 
 ## Run it
 
-Requires Node.js 20.9+ (see `.nvmrc`).
+Requires Node.js 22.22+ (see `.nvmrc`; `nvm install` picks it up). Older versions fail with `ERR_REQUIRE_ESM` or `EBADENGINE`.
 
 ```bash
 npm install
 cp .env.example .env.local   # optional: add Supabase and/or Anthropic keys
-npm run dev                  # http://localhost:3000
+npm run dev                  # http://localhost:3000 (phones on the same Wi-Fi: use the "Network" URL Next prints)
 ```
 
 ### Supabase (optional)
 
+Full production steps (Supabase → Vercel → email → launch checklist) are in [DEPLOY.md](DEPLOY.md).
+
 1. Create a Supabase project and run the SQL files in `supabase/migrations/` in date order.
 2. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local`.
 3. For password-reset links to work from another device, set `NEXT_PUBLIC_SITE_URL` to an address that device can open, and add `<that address>/reset-password` to your Supabase Auth redirect URLs.
+
+### Email notifications (optional)
+
+In-app notifications work as soon as the migrations are applied: database triggers write a row to `notifications` when someone applies (→ client), an application is accepted or rejected (→ worker), or a message is sent (→ recipient). Emails are sent by the `notify-email` Edge Function through [Resend](https://resend.com):
+
+```bash
+supabase functions deploy notify-email --no-verify-jwt
+supabase secrets set RESEND_API_KEY=re_... EMAIL_FROM="QuickGig SA <hello@yourdomain>" SITE_URL=https://your-site WEBHOOK_SECRET=<long random string>
+```
+
+Then in the dashboard create a **Database Webhook** on `public.notifications` for `INSERT` events that calls the `notify-email` Edge Function, with two HTTP headers: `Authorization: Bearer <service role key>` and `x-webhook-secret: <WEBHOOK_SECRET>`.
+
+Users can switch emails off on their profile page (`users.email_notifications`). Message emails are throttled to one per conversation every 15 minutes, and each notification is emailed at most once (`emailed_at`). Without the function or the webhook nothing breaks; the bell still works. WhatsApp is deliberately not wired up yet (it needs a Meta Business account and template approval); the function is the one place to add it.
 
 ## AI gig-writing assistant
 
@@ -37,7 +59,7 @@ On **Post a gig**, the "Improve description and requirements" button rewrites a 
 - **Privacy:** only the public fields are sent. The private address is never accepted by the API.
 - **Access:** when Supabase is configured, the route requires a signed-in user (the page sends the session token) and caps each user at 10 requests a minute and 50 a day. Without Supabase (local demo mode) it falls back to a per-IP limit.
 - **Guardrails in code, not just in the prompt:** every result, from either path, passes through `sanitize()` in `lib/gig-assist.ts`. It drops sentences that contain contact details, limit applicants by gender, race or nationality, ask workers to pay a fee, or state a Rand amount that differs from the Pay field. Removed items are shown to the client as notes.
-- **Abuse limits:** input lengths are clamped and the route has a simple per-IP rate limit (in memory, so use a shared store in production).
+- **Abuse limits:** input lengths are clamped and the route is rate limited (10/min, 50/day per user, or per IP in demo mode). Limits are kept in memory by default; set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` to share them across instances and deploys (plain REST, no SDK). The per-IP path only trusts `x-forwarded-for` when `TRUST_PROXY=true`, and then uses the last hop, since the first one is client-controlled.
 
 ### Evaluating it
 
@@ -48,20 +70,37 @@ npm run eval -- --fallback-only   # rule-based path only, no key needed
 
 `eval/gig-assist-cases.json` holds 18 rough drafts, including ones with phone numbers, emails, ID numbers, discriminatory wording, worker fees, a prompt-injection attempt, all-caps text and mixed isiXhosa/English. For each result the script checks: usable length, no contact details, no private address, no invented pay, no restricted-attribute wording, no worker fees, and that key task details from the draft survive. These are rule-based checks. They catch rule violations, not weak writing, so read live outputs as well.
 
+## Tests
+
+```bash
+npm test              # unit + integration (Vitest + jsdom), no browser or Supabase needed
+npm run test:e2e      # end-to-end (Playwright), demo mode; first run: npx playwright install chromium
+npm run eval -- --fallback-only   # AI assistant guardrail checks
+```
+
+- `tests/unit/`: the `sanitize()` guardrails, draft parsing, and the rate limiter (both backends).
+- `tests/integration/`: renders the real providers and pages in jsdom and plays the full demo flow: client posts a gig, worker applies, client accepts, worker sees the status. Also covers login, registration consent, and role rules.
+- `tests/e2e/`: the same flows plus role gates in a real browser, on desktop and mobile viewports.
+- `supabase/tests/`: row-level security attacks against a throwaway Postgres (see below).
+
+All of these run in GitHub Actions on every push and pull request (`.github/workflows/ci.yml`).
+
 ## Security
 
 The database rules in `supabase/migrations/` enforce access, not just the UI:
 
 - Signups can only be `worker` or `client`. Roles, `verification_status` and `rating` can be changed only by an admin or by trusted server-side code. To create the first admin, run this in the Supabase SQL editor: `update public.users set role = 'admin' where email = 'you@example.com';`
 - The private address lives in `gig_private_details`. Only the gig owner, an admin, or a worker with an accepted application can read it.
-- Reviews are limited to the two people on an accepted application, once each.
+- Reviews are limited to the two people on an accepted application, once each, max 600 characters. Stored ratings are recomputed by a trigger from the reviews table; users still cannot set their own rating.
+- Messages (`messages` table) can only be read and sent by the gig owner and the worker on an application, and only once it is accepted or completed. Admins can read threads for moderation but not write. Messages are immutable; only the recipient can set `read_at`.
 - An application's gig, worker and message cannot be changed once created (only its status).
+- Notifications are created only by triggers. A user can read their own and mark them read (nothing else can change); the email flag is set by the service role only. Each accept/reject decision is notified at most once per application (a client flipping their decision can't spam the worker), and names/titles are truncated before they reach notification text or emails.
 
 Check these rules locally with no Supabase account (it starts a throwaway Postgres with a stand-in for Supabase's auth):
 
 ```bash
 pip install pgserver psycopg2-binary
-python supabase/tests/rls_security_test.py              # expect 32/32 passing
+python supabase/tests/rls_security_test.py              # expect 83/83 passing
 python supabase/tests/rls_security_test.py --baseline   # skips the fixes, so you can see the holes they close
 ```
 
