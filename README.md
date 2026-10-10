@@ -31,6 +31,8 @@ npm run dev                  # http://localhost:3000 (phones on the same Wi-Fi: 
 
 ### Supabase (optional)
 
+Full production steps (Supabase → Vercel → email → launch checklist) are in [DEPLOY.md](DEPLOY.md).
+
 1. Create a Supabase project and run the SQL files in `supabase/migrations/` in date order.
 2. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local`.
 3. For password-reset links to work from another device, set `NEXT_PUBLIC_SITE_URL` to an address that device can open, and add `<that address>/reset-password` to your Supabase Auth redirect URLs.
